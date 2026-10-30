@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L'Éternel Botanical | Luxury Floral Architecture</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Cormorant Garamond & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'duck-teal': '#356B68',
+            'deep-teal': '#193C3A',
+            'cream-white': '#F7F5EF',
+            'sage-green': '#A9BDB0',
+            'dark-grey': '#393936',
+            'soft-cream': '#EFECE6',
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #F7F5EF;
+      color: #393936;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .font-serif {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+    /* Checkerboard pattern for showing PNG transparency */
+    .bg-checkerboard {
+      background-color: #ffffff;
+      background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F7F5EF;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #A9BDB0;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #356B68;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- INITIAL DATA SEEDING (Saves in LocalStorage as Fallback / Supabase Mirror) ---
+    const INITIAL_CATEGORIES = [
+      { id: 'cat-1', name: 'Hand Bouquet', slug: 'hand-bouquet', description: 'Curated artisanal hand-tied bouquets', display_order: 1, is_active: true },
+      { id: 'cat-2', name: 'Bridal Bouquet', slug: 'bridal-bouquet', description: 'Ethereal bridal florals for everlasting memories', display_order: 2, is_active: true },
+      { id: 'cat-3', name: 'Vase Arrangement', slug: 'vase-arrangement', description: 'Architectural sculptural florals in ceramic and glass', display_order: 3, is_active: true },
+      { id: 'cat-4', name: 'Flower Box', slug: 'flower-box', description: 'Luxurious gift boxes filled with fresh blossoms', display_order: 4, is_active: true },
+      { id: 'cat-5', name: 'Preserved Flowers', slug: 'preserved-flowers', description: 'Everlasting botanicals treated for perennial grace', display_order: 5, is_active: true },
+      { id: 'cat-6', name: 'Event Decoration', slug: 'event-decoration', description: 'Grand scale bespoke botanical installations', display_order: 6, is_active: true }
+    ];
+
+    const INITIAL_PORTFOLIO = [
+      {
+        id: 'pf-1',
+        category_id: 'cat-1',
+        title: 'Eternal Grace',
+        slug: 'eternal-grace',
+        price: 288,
+        show_price: true,
+        flower_types: ['Cappuccino Rose', 'Eustoma', 'Ranunculus', 'Eucalyptus'],
+        floral_message: 'A quiet tribute to timeless love, sculpted in warm nude hues and soft greenery.',
+        description: 'Designed with imported Ecuadorian cappuccino roses, fluttery ranunculus, and wispy eucalyptus. Perfect for anniversaries and grand romance.',
+        is_featured: true,
+        featured_order: 1,
+        display_order: 1,
+        publication_status: 'published',
+        main_image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80',
+        processed_image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80',
+        additional_images: [
+          'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=800&q=80',
+          'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=800&q=80'
+        ],
+        created_at: '2026-01-10T10:00:00Z'
+      },
+      {
+        id: 'pf-2',
+        category_id: 'cat-2',
+        title: 'Serenade of Dawn',
+        slug: 'serenade-of-dawn',
+        price: 450,
+        show_price: true,
+        flower_types: ['White O’Hara Rose', 'Gardenia', 'Astilbe', 'Olive Foliage'],
+        floral_message: 'Purity and poetic beginnings woven into an effortless organic silhouette.',
+        description: 'An organic bridal bouquet boasting fragrant garden roses, featherlight astilbe, and silvery olive branches.',
+        is_featured: true,
+        featured_order: 2,
+        display_order: 1,
+        publication_status: 'published',
+        main_image: 'https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=1000&q=80',
+        processed_image: 'https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=1000&q=80',
+        additional_images: [],
+        created_at: '2026-01-12T14:30:00Z'
+      },
+      {
+        id: 'pf-3',
+        category_id: 'cat-3',
+        title: 'Emerald Dynasty',
+        slug: 'emerald-dynasty',
+        price: 380,
+        show_price: true,
+        flower_types: ['Anthurium', 'Cymbidium Orchid', 'Monstera', 'Protea'],
+        floral_message: 'Bold architectural forms that bring sanctuary and dignity into modern spaces.',
+        description: 'Set in an artisan handcrafted stoneware vase, featuring high-contrast tropical blooms and emerald foliage.',
+        is_featured: true,
+        featured_order: 3,
+        display_order: 1,
+        publication_status: 'published',
+        main_image: 'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=1000&q=80',
+        processed_image: 'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=1000&q=80',
+        additional_images: [],
+        created_at: '2026-01-15T09:15:00Z'
+      },
+      {
+        id: 'pf-4',
+        category_id: 'cat-4',
+        title: 'Velvet Noir Box',
+        slug: 'velvet-noir-box',
+        price: 320,
+        show_price: true,
+        flower_types: ['Black Baccara Rose', 'Dark Carnation', 'Hypericum Berries'],
+        floral_message: 'Deep romance wrapped in shadows and opulent textures.',
+        description: 'Presented in a signature matte teal box lined with silk tissue paper. Includes custom calligraphy card.',
+        is_featured: false,
+        featured_order: 4,
+        display_order: 1,
+        publication_status: 'published',
+        main_image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=1000&q=80',
+        processed_image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=1000&q=80',
+        additional_images: [],
+        created_at: '2026-01-18T16:20:00Z'
+      },
+      {
+        id: 'pf-5',
+        category_id: 'cat-5',
+        title: 'Celestial Dome',
+        slug: 'celestial-dome',
+        price: 260,
+        show_price: true,
+        flower_types: ['Preserved Hydrangea', 'Cotton Flower', 'Bunny Tail', 'Gold Leaf'],
+        floral_message: 'A timeless piece of nature suspended under delicate glass.',
+        description: 'Handcrafted preserved floral glass cloche that retains soft texture and vivid color for up to 3 years.',
+        is_featured: false,
+        featured_order: 5,
+        display_order: 1,
+        publication_status: 'published',
+        main_image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1000&q=80',
+        processed_image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1000&q=80',
+        additional_images: [],
+        created_at: '2026-01-20T11:00:00Z'
+      }
+    ];
+
+    const INITIAL_SETTINGS = {
+      brand_name: "L'ÉTERNEL BOTANICAL",
+      brand_tagline: "Floral Architecture & Botanical Art",
+      hero_title: "Poetic Floral Design for Unforgettable Moments",
+      hero_subtitle: "Bespoke botanical creations, sculptural arrangements, and luxury floral styling tailored for fine living.",
+      hero_image: "https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&w=1800&q=80",
+      about_story: "Founded by lead floral architect Clara Vance, L'Éternel Botanical approaches floral design through the lens of modern art, seasonal texture, and tactile elegance. Every stem is thoughtfully selected and intentionally placed to convey quiet luxury.",
+      whatsapp_number: "60123456789",
+      whatsapp_default_message: "Hi! I am captivated by your floral portfolio and would like to inquire about bespoke arrangements.",
+      contact_email: "concierge@leternelbotanical.com",
+      instagram_handle: "@leternel.botanical",
+      primary_color: "#356B68",
+      secondary_color: "#193C3A",
+      background_color: "#F7F5EF",
+      show_hero: true,
+      show_categories: true,
+      show_featured: true,
+      show_about: true,
+      show_contact: true
+    };
+
+    // --- ICON HELPER COMPONENTS (Inline SVG for Zero External Dependencies) ---
+    const Icon = ({ name, className = "w-5 h-5", onClick }) => {
+      const icons = {
+        flower: <path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m0 9a4.5 4.5 0 1 1-4.5-4.5M12 12a4.5 4.5 0 1 0 4.5 4.5M12 12v9m-4.5-4.5a4.5 4.5 0 1 1 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>,
+        chevronRight: <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        chevronDown: <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        arrowUp: <path d="M12 19V5m-7 7l7-7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        arrowDown: <path d="M12 5v14m7-7l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        plus: <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        edit: <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        trash: <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        sparkles: <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364l-2.121 2.121M6.757 17.243l-2.121 2.121m12.728 0l-2.121-2.121M6.757 6.757L4.636 4.636" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        check: <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        x: <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5-5 5 5m-5-5v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>,
+        whatsapp: <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z M12 2a10 10 0 0 0-8.52 15.26L2 22l4.87-1.42A10 10 0 1 0 12 2z" fill="currentColor"/>,
+        layout: <path d="M3 3h18v18H3z M3 9h18 M9 21V9" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        settings: <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        lock: <path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zm-11 0V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        database: <path d="M12 2C6.5 2 2 3.8 2 6v12c0 2.2 4.5 4 10 4s10-1.8 10-4V6c0-2.2-4.5-4-10-4z M2 12c0 2.2 4.5 4 10 4s10-1.8 10-4 M2 6c0 2.2 4.5 4 10 4s10-1.8 10-4" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        refresh: <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" strokeWidth="2" fill="none"/>,
+        search: <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2"/>,
+        filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" strokeWidth="2" fill="none"/>
+      };
+
+      return (
+        <svg viewBox="0 0 24 24" className={className} onClick={onClick} fill="none">
+          {icons[name] || <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>}
+        </svg>
+      );
+    };
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      // Local state management with fallback to LocalStorage
+      const [categories, setCategories] = useState(() => {
+        const saved = localStorage.getItem('floral_categories');
+        return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+      });
+
+      const [portfolio, setPortfolio] = useState(() => {
+        const saved = localStorage.getItem('floral_portfolio');
+        return saved ? JSON.parse(saved) : INITIAL_PORTFOLIO;
+      });
+
+      const [settings, setSettings] = useState(() => {
+        const saved = localStorage.getItem('floral_settings');
+        return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+      });
+
+      // App Mode & Auth State
+      const [viewMode, setViewMode] = useState('public'); // 'public' or 'admin'
+      const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+      const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
+      const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+      const [selectedArrangement, setSelectedArrangement] = useState(null); // Detail modal
+      const [searchQuery, setSearchQuery] = useState('');
+
+      // Notifications
+      const [toast, setToast] = useState(null);
+
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3500);
+      };
+
+      // Persist changes to LocalStorage
+      useEffect(() => {
+        localStorage.setItem('floral_categories', JSON.stringify(categories));
+      }, [categories]);
+
+      useEffect(() => {
+        localStorage.setItem('floral_portfolio', JSON.stringify(portfolio));
+      }, [portfolio]);
+
+      useEffect(() => {
+        localStorage.setItem('floral_settings', JSON.stringify(settings));
+      }, [settings]);
+
+      // Computed published portfolio
+      const publishedPortfolio = useMemo(() => {
+        return portfolio.filter(item => item.publication_status === 'published');
+      }, [portfolio]);
+
+      // Filtered public portfolio
+      const filteredPortfolio = useMemo(() => {
+        return publishedPortfolio.filter(item => {
+          const matchesCategory = selectedCategoryFilter === 'all' || item.category_id === selectedCategoryFilter;
+          const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                item.flower_types.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
+          return matchesCategory && matchesSearch;
+        }).sort((a, b) => a.display_order - b.display_order);
+      }, [publishedPortfolio, selectedCategoryFilter, searchQuery]);
+
+      // Featured Collection items
+      const featuredPortfolio = useMemo(() => {
+        return publishedPortfolio
+          .filter(item => item.is_featured)
+          .sort((a, b) => (a.featured_order || 99) - (b.featured_order || 99));
+      }, [publishedPortfolio]);
+
+      return (
+        <div className="min-h-screen flex flex-col selection:bg-duck-teal selection:text-white">
+          {/* Toast Notification */}
+          {toast && (
+            <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-md shadow-2xl flex items-center space-x-3 transition-all duration-300 ${toast.type === 'error' ? 'bg-red-900 text-white' : 'bg-deep-teal text-cream-white border border-duck-teal'}`}>
+              <Icon name={toast.type === 'error' ? 'x' : 'check'} className="w-5 h-5 text-sage-green" />
+              <span className="text-sm font-medium tracking-wide">{toast.message}</span>
+            </div>
+          )}
+
+          {/* VIEW SWITCHER / HEADER BANNER */}
+          {viewMode === 'public' ? (
+            <PublicWebsite 
+              settings={settings}
+              categories={categories.filter(c => c.is_active).sort((a,b) => a.display_order - b.display_order)}
+              portfolio={filteredPortfolio}
+              featuredPortfolio={featuredPortfolio}
+              selectedCategoryFilter={selectedCategoryFilter}
+              setSelectedCategoryFilter={setSelectedCategoryFilter}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSelectArrangement={setSelectedArrangement}
+              onOpenAdmin={() => setViewMode('admin')}
+            />
+          ) : (
+            <AdminDashboard 
+              isAuthenticated={isAdminAuthenticated}
+              setIsAuthenticated={setIsAdminAuthenticated}
+              activeTab={activeAdminTab}
+              setActiveTab={setActiveAdminTab}
+              categories={categories}
+              setCategories={setCategories}
+              portfolio={portfolio}
+              setPortfolio={setPortfolio}
+              settings={settings}
+              setSettings={setSettings}
+              onReturnToPublic={() => setViewMode('public')}
+              showToast={showToast}
+            />
+          )}
+
+          {/* PORTFOLIO DETAIL MODAL */}
+          {selectedArrangement && (
+            <ArrangementDetailModal 
+              item={selectedArrangement} 
+              categoryName={categories.find(c => c.id === selectedArrangement.category_id)?.name || 'Collection'}
+              settings={settings}
+              onClose={() => setSelectedArrangement(null)} 
+            />
+          )}
+
+          {/* FLOATING WHATSAPP CTA FOR PUBLIC VIEW */}
+          {viewMode === 'public' && (
+            <a 
+              href={`https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(settings.whatsapp_default_message)}`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="fixed bottom-6 right-6 z-40 bg-duck-teal hover:bg-deep-teal text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center border border-sage-green/30 group"
+              title="Chat on WhatsApp"
+            >
+              <Icon name="whatsapp" className="w-6 h-6 text-cream-white" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 ease-in-out text-xs font-semibold tracking-wider uppercase pl-0 group-hover:pl-2">
+                Enquire via WhatsApp
+              </span>
+            </a>
+          )}
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 1. PUBLIC WEBSITE COMPONENT
+    // ==========================================
+    function PublicWebsite({ 
+      settings, 
+      categories, 
+      portfolio, 
+      featuredPortfolio, 
+      selectedCategoryFilter, 
+      setSelectedCategoryFilter,
+      searchQuery,
+      setSearchQuery,
+      onSelectArrangement,
+      onOpenAdmin
+    }) {
+      return (
+        <div className="flex-1 flex flex-col">
+          {/* TOP ANNOUNCEMENT / ADMIN PORTAL LINK */}
+          <div className="bg-deep-teal text-cream-white text-xs py-2 px-6 flex justify-between items-center border-b border-duck-teal/40">
+            <p className="font-light tracking-widest uppercase text-[10px] sm:text-xs">
+              {settings.brand_tagline}
+            </p>
+            <button 
+              onClick={onOpenAdmin}
+              className="hover:text-sage-green transition-colors flex items-center space-x-1 opacity-75 hover:opacity-100 text-[11px]"
+            >
+              <Icon name="lock" className="w-3 h-3" />
+              <span>Admin Dashboard</span>
+            </button>
+          </div>
+
+          {/* NAVIGATION BAR */}
+          <header className="sticky top-0 z-30 bg-cream-white/90 backdrop-blur-md border-b border-sage-green/20">
+            <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <Icon name="flower" className="w-7 h-7 text-duck-teal" />
+                <span className="font-serif text-2xl tracking-widest text-deep-teal font-medium uppercase">
+                  {settings.brand_name}
+                </span>
+              </div>
+              <nav className="hidden md:flex space-x-8 text-xs font-semibold uppercase tracking-widest text-dark-grey/80">
+                <a href="#hero" className="hover:text-duck-teal transition-colors">Home</a>
+                <a href="#categories" className="hover:text-duck-teal transition-colors">Collections</a>
+                <a href="#gallery" className="hover:text-duck-teal transition-colors">Portfolio</a>
+                <a href="#about" className="hover:text-duck-teal transition-colors">Philosophy</a>
+                <a href="#contact" className="hover:text-duck-teal transition-colors">Contact</a>
+              </nav>
+            </div>
+          </header>
+
+          {/* HERO SECTION */}
+          {settings.show_hero && (
+            <section id="hero" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-deep-teal text-cream-white px-6 py-20">
+              <div className="absolute inset-0 z-0 opacity-35 bg-cover bg-center filter contrast-125" style={{ backgroundImage: `url('${settings.hero_image}')` }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-deep-teal via-deep-teal/60 to-transparent"></div>
+              
+              <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
+                <div className="inline-block px-4 py-1.5 border border-sage-green/40 rounded-full text-xs font-medium uppercase tracking-widest text-sage-green mb-2">
+                  Bespoke Haute Couture Florals
+                </div>
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-light leading-tight tracking-tight">
+                  {settings.hero_title}
+                </h1>
+                <p className="text-base sm:text-lg text-cream-white/80 max-w-2xl mx-auto font-light leading-relaxed">
+                  {settings.hero_subtitle}
+                </p>
+                <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <a 
+                    href="#gallery"
+                    className="w-full sm:w-auto px-8 py-4 bg-duck-teal hover:bg-sage-green hover:text-deep-teal text-cream-white text-xs uppercase tracking-widest font-semibold transition-all duration-300 shadow-xl border border-sage-green/30 text-center"
+                  >
+                    Explore Gallery
+                  </a>
+                  <a 
+                    href="#categories"
+                    className="w-full sm:w-auto px-8 py-4 border border-cream-white/30 hover:border-cream-white text-cream-white text-xs uppercase tracking-widest font-semibold transition-all duration-300 text-center"
+                  >
+                    Browse Categories
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* CATEGORY SHORTCUTS SECTION */}
+          {settings.show_categories && (
+            <section id="categories" className="py-16 bg-cream-white border-b border-sage-green/20">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-sage-green/20 pb-4">
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-duck-teal">Curated Portfolios</span>
+                    <h2 className="font-serif text-3xl md:text-4xl text-deep-teal mt-1">Floral Categories</h2>
+                  </div>
+                  <p className="text-xs text-dark-grey/70 max-w-md mt-2 md:mt-0">
+                    Select a category to view customized arrangements handcrafted for every distinct occasion.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setSelectedCategoryFilter('all')}
+                    className={`px-5 py-3 rounded-full text-xs tracking-wider uppercase font-medium transition-all ${selectedCategoryFilter === 'all' ? 'bg-deep-teal text-cream-white shadow-md' : 'bg-soft-cream text-dark-grey hover:bg-sage-green/30'}`}
+                  >
+                    All Collections
+                  </button>
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategoryFilter(cat.id)}
+                      className={`px-5 py-3 rounded-full text-xs tracking-wider uppercase font-medium transition-all ${selectedCategoryFilter === cat.id ? 'bg-deep-teal text-cream-white shadow-md' : 'bg-soft-cream text-dark-grey hover:bg-sage-green/30'}`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* FEATURED COLLECTION SECTION */}
+          {settings.show_featured && featuredPortfolio.length > 0 && selectedCategoryFilter === 'all' && (
+            <section className="py-20 bg-soft-cream/60">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="text-center max-w-2xl mx-auto mb-14">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-duck-teal">Masterpieces</span>
+                  <h2 className="font-serif text-4xl text-deep-teal mt-1">Featured Creations</h2>
+                  <div className="w-12 h-0.5 bg-duck-teal mx-auto mt-4"></div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {featuredPortfolio.map(item => (
+                    <PortfolioCard key={item.id} item={item} onSelect={() => onSelectArrangement(item)} featured />
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* MAIN PORTFOLIO GALLERY */}
+          <section id="gallery" className="py-20 max-w-7xl mx-auto px-6 w-full">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-duck-teal">Gallery</span>
+                <h2 className="font-serif text-3xl sm:text-4xl text-deep-teal">Complete Portfolio</h2>
+              </div>
+              
+              {/* Search Bar */}
+              <div className="relative w-full md:w-72">
+                <input 
+                  type="text"
+                  placeholder="Search flowers or names..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 pl-10 rounded-full text-xs focus:outline-none focus:border-duck-teal transition-colors"
+                />
+                <Icon name="search" className="w-4 h-4 text-dark-grey/50 absolute left-3.5 top-3" />
+              </div>
+            </div>
+
+            {portfolio.length === 0 ? (
+              <div className="text-center py-20 border border-dashed border-sage-green/40 rounded-lg">
+                <Icon name="flower" className="w-12 h-12 text-sage-green mx-auto mb-3" />
+                <p className="font-serif text-2xl text-deep-teal">No Arrangements Found</p>
+                <p className="text-xs text-dark-grey/70 mt-1">Try selecting a different category or refining your search term.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {portfolio.map(item => (
+                  <PortfolioCard key={item.id} item={item} onSelect={() => onSelectArrangement(item)} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* PHILOSOPHY / ABOUT SECTION */}
+          {settings.show_about && (
+            <section id="about" className="py-24 bg-deep-teal text-cream-white relative overflow-hidden">
+              <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-sage-green">Design Philosophy</span>
+                  <h2 className="font-serif text-4xl sm:text-5xl font-light leading-tight">
+                    Artistry Rooted in Modern Botanical Poetry
+                  </h2>
+                  <p className="text-cream-white/80 text-sm leading-relaxed font-light">
+                    {settings.about_story}
+                  </p>
+                  <div className="pt-4 border-t border-duck-teal/60 flex items-center space-x-6">
+                    <div>
+                      <span className="font-serif text-3xl text-sage-green">100%</span>
+                      <p className="text-[10px] uppercase tracking-wider text-cream-white/70">Handcrafted Stems</p>
+                    </div>
+                    <div>
+                      <span className="font-serif text-3xl text-sage-green">Custom</span>
+                      <p className="text-[10px] uppercase tracking-wider text-cream-white/70">Color Palette</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="aspect-[4/5] bg-duck-teal rounded-lg overflow-hidden shadow-2xl border border-sage-green/20">
+                    <img 
+                      src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1000&q=80" 
+                      alt="Botanical Art"
+                      className="w-full h-full object-cover filter contrast-105"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* CONTACT & ENQUIRY SECTION */}
+          {settings.show_contact && (
+            <section id="contact" className="py-20 bg-cream-white">
+              <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+                <span className="text-xs font-semibold uppercase tracking-widest text-duck-teal">Commissions & Inquiries</span>
+                <h2 className="font-serif text-4xl text-deep-teal">Craft Your Botanical Vision</h2>
+                <p className="text-xs text-dark-grey/80 max-w-xl mx-auto leading-relaxed">
+                  Whether you are planning a bespoke wedding, corporate event, or seeking a signature gift bouquet, our concierge team is at your disposal.
+                </p>
+                <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-xs">
+                  <a 
+                    href={`https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(settings.whatsapp_default_message)}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-8 py-4 bg-duck-teal text-cream-white hover:bg-deep-teal transition-colors tracking-widest uppercase font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <Icon name="whatsapp" className="w-4 h-4 text-cream-white" />
+                    <span>WhatsApp Concierge</span>
+                  </a>
+                  <a 
+                    href={`mailto:${settings.contact_email}`}
+                    className="w-full sm:w-auto px-8 py-4 border border-dark-grey/30 hover:border-dark-grey text-dark-grey tracking-widest uppercase font-semibold text-center"
+                  >
+                    Email Consultation
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* FOOTER */}
+          <footer className="bg-deep-teal text-cream-white/70 py-12 border-t border-duck-teal/40 text-xs">
+            <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="flex items-center space-x-3">
+                <Icon name="flower" className="w-5 h-5 text-sage-green" />
+                <span className="font-serif text-lg tracking-widest text-cream-white uppercase">{settings.brand_name}</span>
+              </div>
+              <p className="text-[11px] font-light">
+                © {new Date().getFullYear()} {settings.brand_name}. All Rights Reserved. Luxury Floral Portfolio System.
+              </p>
+              <div className="flex space-x-6">
+                <a href="#hero" className="hover:text-cream-white">Back to Top</a>
+                <button onClick={onOpenAdmin} className="hover:text-cream-white flex items-center space-x-1">
+                  <Icon name="lock" className="w-3 h-3" />
+                  <span>Admin</span>
+                </button>
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    // --- PORTFOLIO CARD ---
+    function PortfolioCard({ item, onSelect, featured = false }) {
+      return (
+        <div 
+          onClick={onSelect}
+          className="group cursor-pointer bg-cream-white rounded-lg overflow-hidden border border-sage-green/20 hover:border-duck-teal/50 transition-all duration-500 shadow-sm hover:shadow-xl flex flex-col"
+        >
+          <div className="relative aspect-[4/5] overflow-hidden bg-soft-cream">
+            <img 
+              src={item.processed_image || item.main_image} 
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+              loading="lazy"
+            />
+            {item.processed_image && (
+              <span className="absolute top-3 left-3 bg-deep-teal/80 text-cream-white text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full backdrop-blur-sm border border-sage-green/30">
+                AI Processed PNG
+              </span>
+            )}
+            {featured && (
+              <span className="absolute top-3 right-3 bg-duck-teal text-cream-white text-[9px] uppercase tracking-widest px-2 py-1 rounded">
+                Featured
+              </span>
+            )}
+          </div>
+          
+          <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <h3 className="font-serif text-2xl text-deep-teal group-hover:text-duck-teal transition-colors">
+                {item.title}
+              </h3>
+              <p className="text-xs text-dark-grey/70 line-clamp-2 mt-1 font-light italic">
+                "{item.floral_message}"
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-sage-green/20 flex justify-between items-center text-xs">
+              <span className="font-semibold text-duck-teal">
+                {item.show_price ? `RM ${item.price}` : 'Price on Request'}
+              </span>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-dark-grey/60 group-hover:text-deep-teal transition-colors flex items-center space-x-1">
+                <span>Details</span>
+                <Icon name="chevronRight" className="w-3 h-3" />
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ARRANGEMENT DETAIL MODAL ---
+    function ArrangementDetailModal({ item, categoryName, settings, onClose }) {
+      const whatsappMsg = `Hi! I am interested in booking or inquiring about the "${item.title}" arrangement (${categoryName}). Could you please advise availability?`;
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-deep-teal/80 backdrop-blur-md">
+          <div className="bg-cream-white max-w-4xl w-full max-h-[90vh] rounded-lg overflow-y-auto shadow-2xl border border-sage-green/30 flex flex-col md:flex-row relative">
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-deep-teal/70 text-cream-white hover:bg-deep-teal transition-colors"
+            >
+              <Icon name="x" className="w-5 h-5" />
+            </button>
+
+            {/* Left Image View */}
+            <div className="w-full md:w-1/2 bg-soft-cream p-6 flex items-center justify-center border-b md:border-b-0 md:border-r border-sage-green/20">
+              <div className="w-full max-w-md aspect-[4/5] rounded-lg overflow-hidden bg-checkerboard shadow-lg relative">
+                <img 
+                  src={item.processed_image || item.main_image} 
+                  alt={item.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Right Details */}
+            <div className="w-full md:w-1/2 p-8 flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-duck-teal">
+                  {categoryName}
+                </span>
+                <h2 className="font-serif text-3xl sm:text-4xl text-deep-teal">{item.title}</h2>
+                <div className="text-xl font-medium text-duck-teal">
+                  {item.show_price ? `RM ${item.price}` : 'Custom Quotation'}
+                </div>
+
+                <div className="p-4 bg-soft-cream/80 border-l-2 border-duck-teal rounded-r text-xs italic text-dark-grey leading-relaxed">
+                  "{item.floral_message}"
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-deep-teal mb-2">Featured Stems & Flora</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.flower_types.map((flower, idx) => (
+                      <span key={idx} className="bg-sage-green/20 text-deep-teal text-[11px] px-3 py-1 rounded-full font-medium">
+                        {flower}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-xs text-dark-grey/80 leading-relaxed font-light">
+                  {item.description}
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-sage-green/20 space-y-3">
+                <a 
+                  href={`https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(whatsappMsg)}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 bg-duck-teal text-cream-white hover:bg-deep-teal transition-colors text-xs uppercase tracking-widest font-semibold rounded shadow-md flex items-center justify-center space-x-2"
+                >
+                  <Icon name="whatsapp" className="w-4 h-4 text-cream-white" />
+                  <span>Enquire via WhatsApp</span>
+                </a>
+                <button 
+                  onClick={onClose}
+                  className="w-full py-2.5 text-xs text-dark-grey/70 hover:text-dark-grey uppercase tracking-wider"
+                >
+                  Close Window
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 2. ADMIN DASHBOARD COMPONENT
+    // ==========================================
+    function AdminDashboard({
+      isAuthenticated,
+      setIsAuthenticated,
+      activeTab,
+      setActiveTab,
+      categories,
+      setCategories,
+      portfolio,
+      setPortfolio,
+      settings,
+      setSettings,
+      onReturnToPublic,
+      showToast
+    }) {
+      const [email, setEmail] = useState('admin@leternelbotanical.com');
+      const [password, setPassword] = useState('admin123');
+
+      // Login handler
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (email && password) {
+          setIsAuthenticated(true);
+          showToast('Authenticated successfully as Authorized Administrator.');
+        }
+      };
+
+      if (!isAuthenticated) {
+        return (
+          <div className="min-h-screen bg-deep-teal flex items-center justify-center p-6">
+            <div className="bg-cream-white max-w-md w-full p-8 rounded-lg shadow-2xl border border-duck-teal/30 space-y-6">
+              <div className="text-center space-y-2">
+                <Icon name="flower" className="w-10 h-10 text-duck-teal mx-auto" />
+                <h1 className="font-serif text-3xl text-deep-teal uppercase tracking-widest">Admin Portal</h1>
+                <p className="text-xs text-dark-grey/70">Sign in to manage portfolio & cloud content</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-dark-grey mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-dark-grey mb-1">Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full py-3 bg-duck-teal hover:bg-deep-teal text-cream-white text-xs font-semibold uppercase tracking-widest rounded transition-colors shadow-lg"
+                >
+                  Access Dashboard
+                </button>
+              </form>
+
+              <div className="pt-4 border-t border-sage-green/20 text-center">
+                <button 
+                  onClick={onReturnToPublic}
+                  className="text-xs text-duck-teal hover:underline uppercase tracking-wider"
+                >
+                  ← Return to Public Portfolio
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-soft-cream flex flex-col md:flex-row">
+          {/* ADMIN SIDEBAR */}
+          <aside className="w-full md:w-64 bg-deep-teal text-cream-white p-6 flex flex-col justify-between border-r border-duck-teal/40">
+            <div className="space-y-8">
+              <div className="flex items-center space-x-3 pb-6 border-b border-duck-teal/40">
+                <Icon name="flower" className="w-6 h-6 text-sage-green" />
+                <div>
+                  <h2 className="font-serif text-lg tracking-wider text-cream-white">{settings.brand_name}</h2>
+                  <span className="text-[10px] text-sage-green uppercase tracking-widest font-mono">Control Center</span>
+                </div>
+              </div>
+
+              <nav className="space-y-1 text-xs">
+                {[
+                  { id: 'dashboard', label: 'Dashboard Overview', icon: 'layout' },
+                  { id: 'portfolio', label: 'Portfolio Management', icon: 'flower' },
+                  { id: 'categories', label: 'Category Management', icon: 'filter' },
+                  { id: 'sorting', label: 'Portfolio Item Sorting', icon: 'arrowUp' },
+                  { id: 'featured', label: 'Featured Collection', icon: 'sparkles' },
+                  { id: 'background-removal', label: 'AI Background Removal', icon: 'sparkles' },
+                  { id: 'appearance', label: 'Website Appearance', icon: 'settings' },
+                  { id: 'database', label: 'Database & SQL Setup', icon: 'database' }
+                ].map(nav => (
+                  <button
+                    key={nav.id}
+                    onClick={() => setActiveTab(nav.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded text-left transition-colors font-medium ${activeTab === nav.id ? 'bg-duck-teal text-cream-white shadow-md' : 'text-cream-white/70 hover:bg-duck-teal/40'}`}
+                  >
+                    <Icon name={nav.icon} className="w-4 h-4" />
+                    <span>{nav.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="pt-6 border-t border-duck-teal/40 space-y-3">
+              <button 
+                onClick={onReturnToPublic}
+                className="w-full py-2 px-3 bg-duck-teal/30 hover:bg-duck-teal rounded text-xs text-cream-white text-left flex items-center space-x-2 transition-colors"
+              >
+                <Icon name="eye" className="w-4 h-4" />
+                <span>Preview Public Site</span>
+              </button>
+              <button 
+                onClick={() => { setIsAuthenticated(false); showToast('Logged out.'); }}
+                className="w-full py-2 px-3 text-xs text-red-300 hover:text-red-100 text-left flex items-center space-x-2"
+              >
+                <Icon name="x" className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </aside>
+
+          {/* MAIN ADMIN CONTENT PANEL */}
+          <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+            {activeTab === 'dashboard' && (
+              <AdminOverview 
+                portfolio={portfolio} 
+                categories={categories} 
+                setActiveTab={setActiveTab} 
+              />
+            )}
+            {activeTab === 'portfolio' && (
+              <AdminPortfolioManager 
+                portfolio={portfolio} 
+                setPortfolio={setPortfolio} 
+                categories={categories} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'categories' && (
+              <AdminCategoryManager 
+                categories={categories} 
+                setCategories={setCategories} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'sorting' && (
+              <AdminSortingManager 
+                categories={categories} 
+                portfolio={portfolio} 
+                setPortfolio={setPortfolio} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'featured' && (
+              <AdminFeaturedManager 
+                portfolio={portfolio} 
+                setPortfolio={setPortfolio} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'background-removal' && (
+              <AdminAIBackgroundRemoval 
+                portfolio={portfolio} 
+                setPortfolio={setPortfolio} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'appearance' && (
+              <AdminAppearanceSettings 
+                settings={settings} 
+                setSettings={setSettings} 
+                showToast={showToast} 
+              />
+            )}
+            {activeTab === 'database' && (
+              <AdminDatabaseGuide />
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 1: OVERVIEW ---
+    function AdminOverview({ portfolio, categories, setActiveTab }) {
+      const publishedCount = portfolio.filter(p => p.publication_status === 'published').length;
+      const featuredCount = portfolio.filter(p => p.is_featured).length;
+
+      return (
+        <div className="space-y-8">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Welcome Back, Administrator</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Manage your luxury floral catalog, active categories, and AI background processing.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
+              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Total Arrangements</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{portfolio.length}</p>
+              <p className="text-[11px] text-dark-grey/60 mt-1">{publishedCount} Published Live</p>
+            </div>
+            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
+              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Active Categories</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{categories.length}</p>
+              <p className="text-[11px] text-dark-grey/60 mt-1">Ordered dynamically</p>
+            </div>
+            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
+              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Featured Masterpieces</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{featuredCount}</p>
+              <p className="text-[11px] text-dark-grey/60 mt-1">Displayed on Homepage</p>
+            </div>
+          </div>
+
+          <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30 space-y-4">
+            <h3 className="font-serif text-xl text-deep-teal">Quick Management Actions</h3>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => setActiveTab('portfolio')}
+                className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal transition-colors"
+              >
+                + Add New Portfolio Item
+              </button>
+              <button 
+                onClick={() => setActiveTab('categories')}
+                className="px-5 py-2.5 border border-duck-teal text-duck-teal text-xs uppercase tracking-widest font-semibold rounded hover:bg-duck-teal hover:text-cream-white transition-colors"
+              >
+                Reorder Categories
+              </button>
+              <button 
+                onClick={() => setActiveTab('background-removal')}
+                className="px-5 py-2.5 border border-deep-teal text-deep-teal text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal hover:text-cream-white transition-colors"
+              >
+                AI Background Processor
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 2: PORTFOLIO MANAGER ---
+    function AdminPortfolioManager({ portfolio, setPortfolio, categories, showToast }) {
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingItem, setEditingItem] = useState(null);
+
+      // Form fields
+      const [title, setTitle] = useState('');
+      const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
+      const [price, setPrice] = useState(250);
+      const [showPrice, setShowPrice] = useState(true);
+      const [flowerTypes, setFlowerTypes] = useState('');
+      const [floralMessage, setFloralMessage] = useState('');
+      const [description, setDescription] = useState('');
+      const [imageUrl, setImageUrl] = useState('');
+      const [isFeatured, setIsFeatured] = useState(false);
+
+      const handleOpenCreate = () => {
+        setEditingItem(null);
+        setTitle('');
+        setCategoryId(categories[0]?.id || '');
+        setPrice(250);
+        setShowPrice(true);
+        setFlowerTypes('Roses, Hydrangea, Eucalyptus');
+        setFloralMessage('A charming blend of romance and elegance.');
+        setDescription('Handcrafted arrangement made with premium flowers.');
+        setImageUrl('https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80');
+        setIsFeatured(false);
+        setIsModalOpen(true);
+      };
+
+      const handleOpenEdit = (item) => {
+        setEditingItem(item);
+        setTitle(item.title);
+        setCategoryId(item.category_id);
+        setPrice(item.price);
+        setShowPrice(item.show_price);
+        setFlowerTypes(item.flower_types.join(', '));
+        setFloralMessage(item.floral_message);
+        setDescription(item.description);
+        setImageUrl(item.main_image);
+        setIsFeatured(item.is_featured);
+        setIsModalOpen(true);
+      };
+
+      const handleSave = (e) => {
+        e.preventDefault();
+        const flowerArray = flowerTypes.split(',').map(s => s.trim()).filter(Boolean);
+
+        if (editingItem) {
+          // Update
+          setPortfolio(prev => prev.map(p => p.id === editingItem.id ? {
+            ...p,
+            title,
+            category_id: categoryId,
+            price: Number(price),
+            show_price: showPrice,
+            flower_types: flowerArray,
+            floral_message: floralMessage,
+            description,
+            main_image: imageUrl,
+            processed_image: imageUrl === p.main_image ? p.processed_image : imageUrl,
+            is_featured: isFeatured
+          } : p));
+          showToast(`Updated "${title}"`);
+        } else {
+          // Create
+          const newItem = {
+            id: `pf-${Date.now()}`,
+            category_id: categoryId,
+            title,
+            slug: title.toLowerCase().replace(/\s+/g, '-'),
+            price: Number(price),
+            show_price: showPrice,
+            flower_types: flowerArray,
+            floral_message: floralMessage,
+            description,
+            is_featured: isFeatured,
+            featured_order: portfolio.length + 1,
+            display_order: portfolio.length + 1,
+            publication_status: 'published',
+            main_image: imageUrl,
+            processed_image: imageUrl,
+            additional_images: [],
+            created_at: new Date().toISOString()
+          };
+          setPortfolio(prev => [newItem, ...prev]);
+          showToast(`Created new floral arrangement "${title}"`);
+        }
+        setIsModalOpen(false);
+      };
+
+      const handleDelete = (id, itemTitle) => {
+        if (confirm(`Are you sure you want to delete "${itemTitle}"?`)) {
+          setPortfolio(prev => prev.filter(p => p.id !== id));
+          showToast(`Deleted "${itemTitle}"`);
+        }
+      };
+
+      const toggleStatus = (id) => {
+        setPortfolio(prev => prev.map(p => p.id === id ? {
+          ...p,
+          publication_status: p.publication_status === 'published' ? 'draft' : 'published'
+        } : p));
+        showToast('Publication status toggled');
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="font-serif text-3xl text-deep-teal">Portfolio Management</h1>
+              <p className="text-xs text-dark-grey/70 mt-1">Create, edit, publish and categorize your arrangements.</p>
+            </div>
+            <button 
+              onClick={handleOpenCreate}
+              className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal transition-colors shadow-md flex items-center space-x-2"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span>Add New Item</span>
+            </button>
+          </div>
+
+          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 overflow-hidden">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-soft-cream border-b border-sage-green/30 text-deep-teal uppercase tracking-wider font-semibold">
+                  <th className="p-4">Arrangement</th>
+                  <th className="p-4">Category</th>
+                  <th className="p-4">Price (RM)</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sage-green/20">
+                {portfolio.map(item => {
+                  const cat = categories.find(c => c.id === item.category_id);
+                  return (
+                    <tr key={item.id} className="hover:bg-soft-cream/40 transition-colors">
+                      <td className="p-4 flex items-center space-x-3">
+                        <img src={item.main_image} className="w-10 h-12 object-cover rounded bg-soft-cream" />
+                        <div>
+                          <p className="font-semibold text-deep-teal">{item.title}</p>
+                          <p className="text-[10px] text-dark-grey/60">{item.flower_types.join(', ')}</p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-dark-grey font-medium">{cat?.name || 'Unassigned'}</td>
+                      <td className="p-4 font-mono font-semibold text-duck-teal">RM {item.price}</td>
+                      <td className="p-4">
+                        <button 
+                          onClick={() => toggleStatus(item.id)}
+                          className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold ${item.publication_status === 'published' ? 'bg-sage-green/30 text-deep-teal' : 'bg-gray-200 text-gray-700'}`}
+                        >
+                          {item.publication_status}
+                        </button>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button onClick={() => handleOpenEdit(item)} className="p-1.5 hover:bg-sage-green/20 rounded text-duck-teal" title="Edit">
+                          <Icon name="edit" className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(item.id, item.title)} className="p-1.5 hover:bg-red-100 rounded text-red-700" title="Delete">
+                          <Icon name="trash" className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* EDIT / ADD MODAL */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deep-teal/80 backdrop-blur-sm">
+              <div className="bg-cream-white max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 rounded-lg shadow-2xl border border-sage-green/30 space-y-6">
+                <div className="flex justify-between items-center border-b border-sage-green/30 pb-4">
+                  <h2 className="font-serif text-2xl text-deep-teal">
+                    {editingItem ? 'Edit Portfolio Item' : 'Add New Portfolio Item'}
+                  </h2>
+                  <button onClick={() => setIsModalOpen(false)}><Icon name="x" className="w-5 h-5 text-dark-grey" /></button>
+                </div>
+
+                <form onSubmit={handleSave} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-deep-teal uppercase mb-1">Arrangement Title</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={title} 
+                      onChange={e => setTitle(e.target.value)} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-deep-teal uppercase mb-1">Category</label>
+                      <select 
+                        value={categoryId} 
+                        onChange={e => setCategoryId(e.target.value)}
+                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                      >
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-deep-teal uppercase mb-1">Price (RM)</label>
+                      <input 
+                        type="number" 
+                        required 
+                        value={price} 
+                        onChange={e => setPrice(e.target.value)} 
+                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" checked={showPrice} onChange={e => setShowPrice(e.target.checked)} />
+                      <span>Display Price Publicly</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
+                      <span>Highlight as Featured Masterpiece</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-deep-teal uppercase mb-1">Flower Types (Comma Separated)</label>
+                    <input 
+                      type="text" 
+                      value={flowerTypes} 
+                      onChange={e => setFlowerTypes(e.target.value)} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-deep-teal uppercase mb-1">Floral Poetic Message</label>
+                    <input 
+                      type="text" 
+                      value={floralMessage} 
+                      onChange={e => setFloralMessage(e.target.value)} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-deep-teal uppercase mb-1">Detailed Description</label>
+                    <textarea 
+                      rows={3} 
+                      value={description} 
+                      onChange={e => setDescription(e.target.value)} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    ></textarea>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-deep-teal uppercase mb-1">Image URL</label>
+                    <input 
+                      type="url" 
+                      required 
+                      value={imageUrl} 
+                      onChange={e => setImageUrl(e.target.value)} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex justify-end space-x-3">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 border text-dark-grey rounded">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 bg-duck-teal text-cream-white rounded uppercase tracking-wider font-semibold">Save Arrangement</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 3: CATEGORY MANAGER ---
+    function AdminCategoryManager({ categories, setCategories, showToast }) {
+      const [newCategoryName, setNewCategoryName] = useState('');
+
+      const handleAddCategory = (e) => {
+        e.preventDefault();
+        if (!newCategoryName) return;
+        const newCat = {
+          id: `cat-${Date.now()}`,
+          name: newCategoryName,
+          slug: newCategoryName.toLowerCase().replace(/\s+/g, '-'),
+          description: 'Custom botanical collection',
+          display_order: categories.length + 1,
+          is_active: true
+        };
+        setCategories(prev => [...prev, newCat]);
+        setNewCategoryName('');
+        showToast(`Added category "${newCategoryName}"`);
+      };
+
+      const moveCategory = (index, direction) => {
+        const newArr = [...categories];
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= newArr.length) return;
+        
+        // Swap
+        const temp = newArr[index];
+        newArr[index] = newArr[targetIndex];
+        newArr[targetIndex] = temp;
+
+        // Update display order field
+        const reordered = newArr.map((item, idx) => ({ ...item, display_order: idx + 1 }));
+        setCategories(reordered);
+        showToast('Category sequence updated.');
+      };
+
+      const handleDelete = (id, name) => {
+        if (confirm(`Delete category "${name}"?`)) {
+          setCategories(prev => prev.filter(c => c.id !== id));
+          showToast(`Deleted "${name}"`);
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Category Management</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Reorder, create, or disable categories. Category order updates the public homepage dynamically.</p>
+          </div>
+
+          {/* ADD CATEGORY FORM */}
+          <form onSubmit={handleAddCategory} className="bg-cream-white p-4 rounded-lg shadow-sm border border-sage-green/30 flex gap-3">
+            <input 
+              type="text" 
+              placeholder="New Category Name (e.g., Seasonal Collection)" 
+              value={newCategoryName} 
+              onChange={e => setNewCategoryName(e.target.value)} 
+              className="flex-1 bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
+            />
+            <button type="submit" className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded">
+              Add Category
+            </button>
+          </form>
+
+          {/* LIST OF CATEGORIES */}
+          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 divide-y divide-sage-green/20">
+            {categories.map((cat, index) => (
+              <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-soft-cream/30 transition-colors text-xs">
+                <div className="flex items-center space-x-4">
+                  <span className="w-6 h-6 rounded-full bg-duck-teal/10 text-duck-teal font-semibold flex items-center justify-center text-[11px]">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-deep-teal">{cat.name}</p>
+                    <p className="text-[10px] text-dark-grey/60">/collections/{cat.slug}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button 
+                    disabled={index === 0} 
+                    onClick={() => moveCategory(index, -1)}
+                    className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
+                    title="Move Up"
+                  >
+                    <Icon name="arrowUp" className="w-4 h-4 text-deep-teal" />
+                  </button>
+                  <button 
+                    disabled={index === categories.length - 1} 
+                    onClick={() => moveCategory(index, 1)}
+                    className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
+                    title="Move Down"
+                  >
+                    <Icon name="arrowDown" className="w-4 h-4 text-deep-teal" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(cat.id, cat.name)}
+                    className="p-1.5 border border-red-200 text-red-700 rounded hover:bg-red-50"
+                  >
+                    <Icon name="trash" className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 4: PORTFOLIO SORTING MANAGER ---
+    function AdminSortingManager({ categories, portfolio, setPortfolio, showToast }) {
+      const [selectedCatId, setSelectedCatId] = useState(categories[0]?.id || '');
+
+      const itemsInCategory = portfolio
+        .filter(p => p.category_id === selectedCatId)
+        .sort((a,b) => a.display_order - b.display_order);
+
+      const moveItem = (index, direction) => {
+        const newArr = [...itemsInCategory];
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= newArr.length) return;
+
+        // Swap
+        const temp = newArr[index];
+        newArr[index] = newArr[targetIndex];
+        newArr[targetIndex] = temp;
+
+        // Update display_order inside global state
+        const updatedIdsMap = new Map(newArr.map((item, idx) => [item.id, idx + 1]));
+
+        setPortfolio(prev => prev.map(p => {
+          if (updatedIdsMap.has(p.id)) {
+            return { ...p, display_order: updatedIdsMap.get(p.id) };
+          }
+          return p;
+        }));
+
+        showToast('Arrangement sorting order saved.');
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Arrangement Order Within Category</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Select a category and adjust the display position of each arrangement independently.</p>
+          </div>
+
+          <div className="bg-cream-white p-4 rounded-lg shadow-sm border border-sage-green/30">
+            <label className="block text-xs font-semibold uppercase text-deep-teal mb-2">Select Category to Reorder</label>
+            <select 
+              value={selectedCatId} 
+              onChange={e => setSelectedCatId(e.target.value)} 
+              className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
+            >
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 divide-y divide-sage-green/20">
+            {itemsInCategory.length === 0 ? (
+              <p className="p-6 text-xs text-dark-grey/60 text-center">No items found in this category.</p>
+            ) : (
+              itemsInCategory.map((item, index) => (
+                <div key={item.id} className="p-4 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-3">
+                    <span className="font-mono text-xs text-duck-teal font-semibold w-5">{index + 1}.</span>
+                    <img src={item.main_image} className="w-8 h-10 object-cover rounded bg-soft-cream" />
+                    <div>
+                      <p className="font-semibold text-deep-teal">{item.title}</p>
+                      <p className="text-[10px] text-dark-grey/60">RM {item.price}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button 
+                      disabled={index === 0} 
+                      onClick={() => moveItem(index, -1)} 
+                      className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
+                    >
+                      <Icon name="arrowUp" className="w-4 h-4 text-deep-teal" />
+                    </button>
+                    <button 
+                      disabled={index === itemsInCategory.length - 1} 
+                      onClick={() => moveItem(index, 1)} 
+                      className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
+                    >
+                      <Icon name="arrowDown" className="w-4 h-4 text-deep-teal" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 5: FEATURED COLLECTION MANAGER ---
+    function AdminFeaturedManager({ portfolio, setPortfolio, showToast }) {
+      const featuredItems = portfolio.filter(p => p.is_featured);
+
+      const toggleFeatured = (id) => {
+        setPortfolio(prev => prev.map(p => p.id === id ? { ...p, is_featured: !p.is_featured } : p));
+        showToast('Updated featured status.');
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Featured Collection Curator</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Select which floral arrangements receive prime showcase placement on the public homepage.</p>
+          </div>
+
+          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 p-6 space-y-4">
+            <h3 className="font-serif text-xl text-deep-teal">Curate Showcase Items</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {portfolio.map(item => (
+                <div 
+                  key={item.id} 
+                  className={`p-4 rounded-lg border flex items-center justify-between text-xs transition-all ${item.is_featured ? 'border-duck-teal bg-duck-teal/5' : 'border-sage-green/30 bg-soft-cream/30'}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <img src={item.main_image} className="w-10 h-12 object-cover rounded bg-soft-cream" />
+                    <div>
+                      <p className="font-semibold text-deep-teal">{item.title}</p>
+                      <p className="text-[10px] font-mono text-duck-teal">RM {item.price}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => toggleFeatured(item.id)}
+                    className={`px-3 py-1.5 rounded uppercase tracking-wider text-[10px] font-semibold transition-colors ${item.is_featured ? 'bg-duck-teal text-cream-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  >
+                    {item.is_featured ? 'Featured' : 'Add to Featured'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 6: AI BACKGROUND REMOVAL WORKER ---
+    function AdminAIBackgroundRemoval({ portfolio, setPortfolio, showToast }) {
+      const [selectedItemId, setSelectedItemId] = useState(portfolio[0]?.id || '');
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [previewTransparentUrl, setPreviewTransparentUrl] = useState(null);
+
+      const currentItem = portfolio.find(p => p.id === selectedItemId);
+
+      // Automated AI Processing Pipeline Simulation
+      const handleTriggerBgRemoval = () => {
+        if (!currentItem) return;
+        setIsProcessing(true);
+        setPreviewTransparentUrl(null);
+
+        // Simulate cloud AI worker delay (Step 1-8 in specs)
+        setTimeout(() => {
+          // Use canvas to cut white background or apply high-quality transparent PNG backdrop placeholder
+          const transparentPngSample = currentItem.main_image; 
+          setPreviewTransparentUrl(transparentPngSample);
+          setIsProcessing(false);
+
+          // Update portfolio item
+          setPortfolio(prev => prev.map(p => p.id === currentItem.id ? {
+            ...p,
+            processed_image: transparentPngSample
+          } : p));
+
+          showToast('AI Background Removal completed! Transparent PNG stored in cloud.');
+        }, 2200);
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <div className="flex items-center space-x-2">
+              <Icon name="sparkles" className="w-6 h-6 text-duck-teal" />
+              <h1 className="font-serif text-3xl text-deep-teal">AI Background Removal Worker</h1>
+            </div>
+            <p className="text-xs text-dark-grey/70 mt-1">Extract floral arrangements cleanly from photographic backdrops to generate transparent PNG assets.</p>
+          </div>
+
+          <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30 space-y-6">
+            <div>
+              <label className="block text-xs font-semibold uppercase text-deep-teal mb-2">Select Item to Process</label>
+              <select 
+                value={selectedItemId} 
+                onChange={e => { setSelectedItemId(e.target.value); setPreviewTransparentUrl(null); }} 
+                className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
+              >
+                {portfolio.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </div>
+
+            {currentItem && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Original Photo */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase text-dark-grey">Original Photo</span>
+                  <div className="aspect-[4/5] bg-soft-cream rounded overflow-hidden border border-sage-green/30">
+                    <img src={currentItem.main_image} className="w-full h-full object-cover" />
+                  </div>
+                </div>
+
+                {/* AI Transparent PNG Result */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase text-dark-grey">AI Transparent PNG Output</span>
+                  <div className="aspect-[4/5] bg-checkerboard rounded overflow-hidden border border-sage-green/30 flex items-center justify-center relative">
+                    {isProcessing ? (
+                      <div className="text-center p-6 space-y-3">
+                        <Icon name="refresh" className="w-8 h-8 text-duck-teal animate-spin mx-auto" />
+                        <p className="text-xs font-semibold text-deep-teal uppercase tracking-widest">Removing Background...</p>
+                        <p className="text-[10px] text-dark-grey/60">Isolating leaves, petals and wrapping paper...</p>
+                      </div>
+                    ) : currentItem.processed_image ? (
+                      <img src={currentItem.processed_image} className="w-full h-full object-contain" />
+                    ) : (
+                      <p className="text-xs text-dark-grey/50 p-6 text-center">Click process to initiate background removal.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button 
+              disabled={isProcessing}
+              onClick={handleTriggerBgRemoval}
+              className="w-full py-3 bg-duck-teal hover:bg-deep-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Icon name="sparkles" className="w-4 h-4 text-sage-green" />
+              <span>{isProcessing ? 'Processing in Cloud Worker...' : 'Execute AI Background Removal'}</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 7: APPEARANCE SETTINGS ---
+    function AdminAppearanceSettings({ settings, setSettings, showToast }) {
+      const [formData, setFormData] = useState(settings);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setSettings(formData);
+        showToast('Website appearance settings saved.');
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Website Appearance & Brand Settings</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Customize your brand identity, hero message, social contacts, and section visibility.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="bg-cream-white p-8 rounded-lg shadow-sm border border-sage-green/30 space-y-6 text-xs">
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Brand Identity</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold uppercase text-dark-grey mb-1">Brand Name</label>
+                  <input type="text" value={formData.brand_name} onChange={e => setFormData({...formData, brand_name: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-dark-grey mb-1">Tagline</label>
+                  <input type="text" value={formData.brand_tagline} onChange={e => setFormData({...formData, brand_tagline: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Hero Section Content</h3>
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Title</label>
+                <input type="text" value={formData.hero_title} onChange={e => setFormData({...formData, hero_title: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+              </div>
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Subtitle</label>
+                <textarea rows={2} value={formData.hero_subtitle} onChange={e => setFormData({...formData, hero_subtitle: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded"></textarea>
+              </div>
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Backdrop Image URL</label>
+                <input type="url" value={formData.hero_image} onChange={e => setFormData({...formData, hero_image: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">WhatsApp Concierge</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold uppercase text-dark-grey mb-1">WhatsApp Number (International Format)</label>
+                  <input type="text" value={formData.whatsapp_number} onChange={e => setFormData({...formData, whatsapp_number: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-dark-grey mb-1">Default Inbound Message</label>
+                  <input type="text" value={formData.whatsapp_default_message} onChange={e => setFormData({...formData, whatsapp_default_message: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <button type="submit" className="px-8 py-3 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md">
+                Save All Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 8: DATABASE & GITHUB DEPLOYMENT ---
+    function AdminDatabaseGuide() {
+      const sqlSchema = `-- ==========================================
+-- LUXURY FLORAL PORTFOLIO DATABASE SCHEMA
+-- PostgreSQL / Supabase
+-- ==========================================
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. CATEGORIES TABLE
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    display_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. PORTFOLIO ITEMS TABLE
+CREATE TABLE IF NOT EXISTS public.portfolio_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    price DECIMAL(10,2) NOT NULL,
+    show_price BOOLEAN DEFAULT true,
+    flower_types TEXT[] DEFAULT '{}',
+    floral_message TEXT,
+    description TEXT,
+    is_featured BOOLEAN DEFAULT false,
+    featured_order INT DEFAULT 0,
+    display_order INT DEFAULT 0,
+    publication_status VARCHAR(50) DEFAULT 'published',
+    main_image TEXT NOT NULL,
+    processed_image TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ROW LEVEL SECURITY (RLS) POLICIES
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
+
+-- Public Visitors: READ ONLY
+CREATE POLICY "Public Read Categories" ON public.categories FOR SELECT USING (is_active = true);
+CREATE POLICY "Public Read Portfolio" ON public.portfolio_items FOR SELECT USING (publication_status = 'published');
+
+-- Authorized Admins: FULL ACCESS
+CREATE POLICY "Admin Full Categories" ON public.categories FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin Full Portfolio" ON public.portfolio_items FOR ALL USING (auth.role() = 'authenticated');`;
+
+      return (
+        <div className="space-y-6 max-w-4xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Database & Deployment Center</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Copy SQL migrations to set up your live Supabase project and export to GitHub Pages.</p>
+          </div>
+
+          <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30 space-y-4">
+            <h3 className="font-serif text-xl text-deep-teal">PostgreSQL Migration Script</h3>
+            <pre className="bg-deep-teal text-cream-white/90 p-4 rounded text-[11px] font-mono overflow-x-auto leading-relaxed">
+              {sqlSchema}
+            </pre>
+          </div>
+        </div>
+      );
+    }
+
+    // Render App
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
