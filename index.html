@@ -98,6 +98,22 @@
 
     const { useState, useEffect, useMemo, useRef } = React;
 
+    // Supabase Client Helper
+    let supabaseClient = null;
+    function getSupabaseClient(url, key) {
+      if (url && key && window.supabase) {
+        try {
+          if (!supabaseClient) {
+            supabaseClient = window.supabase.createClient(url, key);
+          }
+          return supabaseClient;
+        } catch(e) {
+          console.error("Supabase Init Error:", e);
+        }
+      }
+      return null;
+    }
+
     // --- INITIAL DATA SEEDING (Saves in LocalStorage as Fallback / Supabase Mirror) ---
     const INITIAL_CATEGORIES = [
       { id: 'cat-1', name: 'Hand Bouquet', slug: 'hand-bouquet', description: 'Curated artisanal hand-tied bouquets', display_order: 1, is_active: true },
@@ -223,6 +239,8 @@
       primary_color: "#356B68",
       secondary_color: "#193C3A",
       background_color: "#F7F5EF",
+      supabase_url: "",
+      supabase_anon_key: "",
       show_hero: true,
       show_categories: true,
       show_featured: true,
@@ -270,7 +288,7 @@
 
     // --- MAIN APP COMPONENT ---
     function App() {
-      // Local state management with fallback to LocalStorage
+      // Local state management with fallback to LocalStorage & Supabase Cloud
       const [categories, setCategories] = useState(() => {
         try {
           const saved = localStorage.getItem('floral_categories');
@@ -298,6 +316,16 @@
         }
       });
 
+      // Admin login credentials state
+      const [adminCreds, setAdminCreds] = useState(() => {
+        try {
+          const saved = localStorage.getItem('floral_admin_creds');
+          return saved ? JSON.parse(saved) : { username: 'admin@leternelbotanical.com', password: 'admin123' };
+        } catch(e) {
+          return { username: 'admin@leternelbotanical.com', password: 'admin123' };
+        }
+      });
+
       // App Mode & Auth State
       const [viewMode, setViewMode] = useState('public'); // 'public' or 'admin'
       const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -305,6 +333,7 @@
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
       const [selectedArrangement, setSelectedArrangement] = useState(null); // Detail modal
       const [searchQuery, setSearchQuery] = useState('');
+      const [isCloudSynced, setIsCloudSynced] = useState(false);
 
       // Notifications
       const [toast, setToast] = useState(null);
@@ -313,6 +342,39 @@
         setToast({ message, type });
         setTimeout(() => setToast(null), 3500);
       };
+
+      // Persist Admin Credentials
+      useEffect(() => {
+        localStorage.setItem('floral_admin_creds', JSON.stringify(adminCreds));
+      }, [adminCreds]);
+
+      // Load data from Supabase if credentials are provided
+      useEffect(() => {
+        const client = getSupabaseClient(settings.supabase_url, settings.supabase_anon_key);
+        if (client) {
+          setIsCloudSynced(true);
+          // Sync settings from Supabase
+          client.from('website_settings').select('*').single().then(({ data, error }) => {
+            if (data && !error) {
+              setSettings(prev => ({ ...prev, ...data }));
+            }
+          });
+          // Sync categories from Supabase
+          client.from('categories').select('*').order('display_order', { ascending: true }).then(({ data, error }) => {
+            if (data && data.length > 0 && !error) {
+              setCategories(data);
+            }
+          });
+          // Sync portfolio from Supabase
+          client.from('portfolio_items').select('*').order('display_order', { ascending: true }).then(({ data, error }) => {
+            if (data && data.length > 0 && !error) {
+              setPortfolio(data);
+            }
+          });
+        } else {
+          setIsCloudSynced(false);
+        }
+      }, [settings.supabase_url, settings.supabase_anon_key]);
 
       // Persist changes to LocalStorage
       useEffect(() => {
@@ -325,6 +387,14 @@
 
       useEffect(() => {
         localStorage.setItem('floral_settings', JSON.stringify(settings));
+        
+        // Sync to Supabase if configured
+        const client = getSupabaseClient(settings.supabase_url, settings.supabase_anon_key);
+        if (client) {
+          client.from('website_settings').upsert({ id: 1, ...settings }).then(({ error }) => {
+            if (error) console.log("Supabase Settings Sync Note:", error.message);
+          });
+        }
       }, [settings]);
 
       // Computed published portfolio
@@ -372,21 +442,25 @@
               setSearchQuery={setSearchQuery}
               onSelectArrangement={setSelectedArrangement}
               onOpenAdmin={() => setViewMode('admin')}
+              isCloudSynced={isCloudSynced}
             />
           ) : (
             <AdminDashboard 
               isAuthenticated={isAdminAuthenticated}
               setIsAuthenticated={setIsAdminAuthenticated}
               activeTab={activeAdminTab}
-              setActiveTab={setActiveAdminTab}
+              setActiveTab={setActiveTab}
               categories={categories}
               setCategories={setCategories}
               portfolio={portfolio}
               setPortfolio={setPortfolio}
               settings={settings}
               setSettings={setSettings}
+              adminCreds={adminCreds}
+              setAdminCreds={setAdminCreds}
               onReturnToPublic={() => setViewMode('public')}
               showToast={showToast}
+              isCloudSynced={isCloudSynced}
             />
           )}
 
@@ -432,15 +506,21 @@
       searchQuery,
       setSearchQuery,
       onSelectArrangement,
-      onOpenAdmin
+      onOpenAdmin,
+      isCloudSynced
     }) {
       return (
         <div className="flex-1 flex flex-col">
           {/* TOP ANNOUNCEMENT / ADMIN PORTAL LINK */}
           <div className="bg-deep-teal text-cream-white text-xs py-2 px-6 flex justify-between items-center border-b border-duck-teal/40">
-            <p className="font-light tracking-widest uppercase text-[10px] sm:text-xs">
-              {settings.brand_tagline}
-            </p>
+            <div className="flex items-center space-x-2">
+              <p className="font-light tracking-widest uppercase text-[10px] sm:text-xs">
+                {settings.brand_tagline}
+              </p>
+              <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono ${isCloudSynced ? 'bg-emerald-800 text-emerald-200' : 'bg-amber-800/80 text-amber-200'}`}>
+                {isCloudSynced ? '● Cloud Synced' : '○ Local Device Mode'}
+              </span>
+            </div>
             <button 
               onClick={onOpenAdmin}
               className="hover:text-sage-green transition-colors flex items-center space-x-1 opacity-75 hover:opacity-100 text-[11px]"
@@ -825,18 +905,22 @@
       setPortfolio,
       settings,
       setSettings,
+      adminCreds,
+      setAdminCreds,
       onReturnToPublic,
       showToast
     }) {
-      const [email, setEmail] = useState('admin@leternelbotanical.com');
-      const [password, setPassword] = useState('admin123');
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
 
       // Login handler
       const handleLogin = (e) => {
         e.preventDefault();
-        if (email && password) {
+        if (email.trim().toLowerCase() === adminCreds.username.trim().toLowerCase() && password === adminCreds.password) {
           setIsAuthenticated(true);
           showToast('Authenticated successfully as Authorized Administrator.');
+        } else {
+          showToast('Invalid Username/Email or Password.', 'error');
         }
       };
 
@@ -852,10 +936,11 @@
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-dark-grey mb-1">Email</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-dark-grey mb-1">Username / Email</label>
                   <input 
-                    type="email" 
+                    type="text" 
                     required
+                    placeholder="Enter your admin username or email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
@@ -866,6 +951,7 @@
                   <input 
                     type="password" 
                     required
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
@@ -914,6 +1000,7 @@
                   { id: 'featured', label: 'Featured Collection', icon: 'sparkles' },
                   { id: 'background-removal', label: 'AI Background Removal', icon: 'sparkles' },
                   { id: 'appearance', label: 'Website Appearance', icon: 'settings' },
+                  { id: 'account', label: 'Account Credentials', icon: 'lock' },
                   { id: 'database', label: 'Database & SQL Setup', icon: 'database' }
                 ].map(nav => (
                   <button
@@ -999,6 +1086,13 @@
                 showToast={showToast} 
               />
             )}
+            {activeTab === 'account' && (
+              <AdminAccountSettings 
+                adminCreds={adminCreds} 
+                setAdminCreds={setAdminCreds} 
+                showToast={showToast} 
+              />
+            )}
             {activeTab === 'database' && (
               <AdminDatabaseGuide />
             )}
@@ -1006,745 +1100,10 @@
         </div>
       );
     }
-
-    // --- ADMIN SUB-TAB 1: OVERVIEW ---
-    function AdminOverview({ portfolio, categories, setActiveTab }) {
-      const publishedCount = portfolio.filter(p => p.publication_status === 'published').length;
-      const featuredCount = portfolio.filter(p => p.is_featured).length;
-
-      return (
-        <div className="space-y-8">
-          <div>
-            <h1 className="font-serif text-3xl text-deep-teal">Welcome Back, Administrator</h1>
-            <p className="text-xs text-dark-grey/70 mt-1">Manage your luxury floral catalog, active categories, and AI background processing.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
-              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Total Arrangements</span>
-              <p className="font-serif text-4xl text-deep-teal mt-2">{portfolio.length}</p>
-              <p className="text-[11px] text-dark-grey/60 mt-1">{publishedCount} Published Live</p>
-            </div>
-            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
-              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Active Categories</span>
-              <p className="font-serif text-4xl text-deep-teal mt-2">{categories.length}</p>
-              <p className="text-[11px] text-dark-grey/60 mt-1">Ordered dynamically</p>
-            </div>
-            <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30">
-              <span className="text-xs uppercase tracking-wider text-duck-teal font-semibold">Featured Masterpieces</span>
-              <p className="font-serif text-4xl text-deep-teal mt-2">{featuredCount}</p>
-              <p className="text-[11px] text-dark-grey/60 mt-1">Displayed on Homepage</p>
-            </div>
-          </div>
-
-          <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30 space-y-4">
-            <h3 className="font-serif text-xl text-deep-teal">Quick Management Actions</h3>
-            <div className="flex flex-wrap gap-4">
-              <button 
-                onClick={() => setActiveTab('portfolio')}
-                className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal transition-colors"
-              >
-                + Add New Portfolio Item
-              </button>
-              <button 
-                onClick={() => setActiveTab('categories')}
-                className="px-5 py-2.5 border border-duck-teal text-duck-teal text-xs uppercase tracking-widest font-semibold rounded hover:bg-duck-teal hover:text-cream-white transition-colors"
-              >
-                Reorder Categories
-              </button>
-              <button 
-                onClick={() => setActiveTab('background-removal')}
-                className="px-5 py-2.5 border border-deep-teal text-deep-teal text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal hover:text-cream-white transition-colors"
-              >
-                AI Background Processor
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 2: PORTFOLIO MANAGER ---
-    function AdminPortfolioManager({ portfolio, setPortfolio, categories, showToast }) {
-      const [isModalOpen, setIsModalOpen] = useState(false);
-      const [editingItem, setEditingItem] = useState(null);
-
-      // Form fields
-      const [title, setTitle] = useState('');
-      const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
-      const [price, setPrice] = useState(250);
-      const [showPrice, setShowPrice] = useState(true);
-      const [flowerTypes, setFlowerTypes] = useState('');
-      const [floralMessage, setFloralMessage] = useState('');
-      const [description, setDescription] = useState('');
-      const [imageUrl, setImageUrl] = useState('');
-      const [isFeatured, setIsFeatured] = useState(false);
-
-      const handleOpenCreate = () => {
-        setEditingItem(null);
-        setTitle('');
-        setCategoryId(categories[0]?.id || '');
-        setPrice(250);
-        setShowPrice(true);
-        setFlowerTypes('Roses, Hydrangea, Eucalyptus');
-        setFloralMessage('A charming blend of romance and elegance.');
-        setDescription('Handcrafted arrangement made with premium flowers.');
-        setImageUrl('https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80');
-        setIsFeatured(false);
-        setIsModalOpen(true);
-      };
-
-      const handleOpenEdit = (item) => {
-        setEditingItem(item);
-        setTitle(item.title);
-        setCategoryId(item.category_id);
-        setPrice(item.price);
-        setShowPrice(item.show_price);
-        setFlowerTypes(item.flower_types.join(', '));
-        setFloralMessage(item.floral_message);
-        setDescription(item.description);
-        setImageUrl(item.main_image);
-        setIsFeatured(item.is_featured);
-        setIsModalOpen(true);
-      };
-
-      const handleSave = (e) => {
-        e.preventDefault();
-        const flowerArray = flowerTypes.split(',').map(s => s.trim()).filter(Boolean);
-
-        if (editingItem) {
-          // Update
-          setPortfolio(prev => prev.map(p => p.id === editingItem.id ? {
-            ...p,
-            title,
-            category_id: categoryId,
-            price: Number(price),
-            show_price: showPrice,
-            flower_types: flowerArray,
-            floral_message: floralMessage,
-            description,
-            main_image: imageUrl,
-            processed_image: imageUrl === p.main_image ? p.processed_image : imageUrl,
-            is_featured: isFeatured
-          } : p));
-          showToast(`Updated "${title}"`);
-        } else {
-          // Create
-          const newItem = {
-            id: `pf-${Date.now()}`,
-            category_id: categoryId,
-            title,
-            slug: title.toLowerCase().replace(/\s+/g, '-'),
-            price: Number(price),
-            show_price: showPrice,
-            flower_types: flowerArray,
-            floral_message: floralMessage,
-            description,
-            is_featured: isFeatured,
-            featured_order: portfolio.length + 1,
-            display_order: portfolio.length + 1,
-            publication_status: 'published',
-            main_image: imageUrl,
-            processed_image: imageUrl,
-            additional_images: [],
-            created_at: new Date().toISOString()
-          };
-          setPortfolio(prev => [newItem, ...prev]);
-          showToast(`Created new floral arrangement "${title}"`);
-        }
-        setIsModalOpen(false);
-      };
-
-      const handleDelete = (id, itemTitle) => {
-        if (confirm(`Are you sure you want to delete "${itemTitle}"?`)) {
-          setPortfolio(prev => prev.filter(p => p.id !== id));
-          showToast(`Deleted "${itemTitle}"`);
-        }
-      };
-
-      const toggleStatus = (id) => {
-        setPortfolio(prev => prev.map(p => p.id === id ? {
-          ...p,
-          publication_status: p.publication_status === 'published' ? 'draft' : 'published'
-        } : p));
-        showToast('Publication status toggled');
-      };
-
-      return (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="font-serif text-3xl text-deep-teal">Portfolio Management</h1>
-              <p className="text-xs text-dark-grey/70 mt-1">Create, edit, publish and categorize your arrangements.</p>
-            </div>
-            <button 
-              onClick={handleOpenCreate}
-              className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded hover:bg-deep-teal transition-colors shadow-md flex items-center space-x-2"
-            >
-              <Icon name="plus" className="w-4 h-4" />
-              <span>Add New Item</span>
-            </button>
-          </div>
-
-          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 overflow-hidden">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-soft-cream border-b border-sage-green/30 text-deep-teal uppercase tracking-wider font-semibold">
-                  <th className="p-4">Arrangement</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Price (RM)</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-sage-green/20">
-                {portfolio.map(item => {
-                  const cat = categories.find(c => c.id === item.category_id);
-                  return (
-                    <tr key={item.id} className="hover:bg-soft-cream/40 transition-colors">
-                      <td className="p-4 flex items-center space-x-3">
-                        <img src={item.main_image} className="w-10 h-12 object-cover rounded bg-soft-cream" />
-                        <div>
-                          <p className="font-semibold text-deep-teal">{item.title}</p>
-                          <p className="text-[10px] text-dark-grey/60">{item.flower_types.join(', ')}</p>
-                        </div>
-                      </td>
-                      <td className="p-4 text-dark-grey font-medium">{cat?.name || 'Unassigned'}</td>
-                      <td className="p-4 font-mono font-semibold text-duck-teal">RM {item.price}</td>
-                      <td className="p-4">
-                        <button 
-                          onClick={() => toggleStatus(item.id)}
-                          className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold ${item.publication_status === 'published' ? 'bg-sage-green/30 text-deep-teal' : 'bg-gray-200 text-gray-700'}`}
-                        >
-                          {item.publication_status}
-                        </button>
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <button onClick={() => handleOpenEdit(item)} className="p-1.5 hover:bg-sage-green/20 rounded text-duck-teal" title="Edit">
-                          <Icon name="edit" className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(item.id, item.title)} className="p-1.5 hover:bg-red-100 rounded text-red-700" title="Delete">
-                          <Icon name="trash" className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* EDIT / ADD MODAL */}
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deep-teal/80 backdrop-blur-sm">
-              <div className="bg-cream-white max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 rounded-lg shadow-2xl border border-sage-green/30 space-y-6">
-                <div className="flex justify-between items-center border-b border-sage-green/30 pb-4">
-                  <h2 className="font-serif text-2xl text-deep-teal">
-                    {editingItem ? 'Edit Portfolio Item' : 'Add New Portfolio Item'}
-                  </h2>
-                  <button onClick={() => setIsModalOpen(false)}><Icon name="x" className="w-5 h-5 text-dark-grey" /></button>
-                </div>
-
-                <form onSubmit={handleSave} className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-semibold text-deep-teal uppercase mb-1">Arrangement Title</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={title} 
-                      onChange={e => setTitle(e.target.value)} 
-                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block font-semibold text-deep-teal uppercase mb-1">Category</label>
-                      <select 
-                        value={categoryId} 
-                        onChange={e => setCategoryId(e.target.value)}
-                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                      >
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-deep-teal uppercase mb-1">Price (RM)</label>
-                      <input 
-                        type="number" 
-                        required 
-                        value={price} 
-                        onChange={e => setPrice(e.target.value)} 
-                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input type="checkbox" checked={showPrice} onChange={e => setShowPrice(e.target.checked)} />
-                      <span>Display Price Publicly</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
-                      <span>Highlight as Featured Masterpiece</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-deep-teal uppercase mb-1">Flower Types (Comma Separated)</label>
-                    <input 
-                      type="text" 
-                      value={flowerTypes} 
-                      onChange={e => setFlowerTypes(e.target.value)} 
-                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-deep-teal uppercase mb-1">Floral Poetic Message</label>
-                    <input 
-                      type="text" 
-                      value={floralMessage} 
-                      onChange={e => setFloralMessage(e.target.value)} 
-                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-deep-teal uppercase mb-1">Detailed Description</label>
-                    <textarea 
-                      rows={3} 
-                      value={description} 
-                      onChange={e => setDescription(e.target.value)} 
-                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                    ></textarea>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-deep-teal uppercase mb-1">Image URL</label>
-                    <input 
-                      type="url" 
-                      required 
-                      value={imageUrl} 
-                      onChange={e => setImageUrl(e.target.value)} 
-                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
-                    />
-                  </div>
-
-                  <div className="pt-4 flex justify-end space-x-3">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 border text-dark-grey rounded">Cancel</button>
-                    <button type="submit" className="px-6 py-2.5 bg-duck-teal text-cream-white rounded uppercase tracking-wider font-semibold">Save Arrangement</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 3: CATEGORY MANAGER ---
-    function AdminCategoryManager({ categories, setCategories, showToast }) {
-      const [newCategoryName, setNewCategoryName] = useState('');
-
-      const handleAddCategory = (e) => {
-        e.preventDefault();
-        if (!newCategoryName) return;
-        const newCat = {
-          id: `cat-${Date.now()}`,
-          name: newCategoryName,
-          slug: newCategoryName.toLowerCase().replace(/\s+/g, '-'),
-          description: 'Custom botanical collection',
-          display_order: categories.length + 1,
-          is_active: true
-        };
-        setCategories(prev => [...prev, newCat]);
-        setNewCategoryName('');
-        showToast(`Added category "${newCategoryName}"`);
-      };
-
-      const moveCategory = (index, direction) => {
-        const newArr = [...categories];
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= newArr.length) return;
-        
-        // Swap
-        const temp = newArr[index];
-        newArr[index] = newArr[targetIndex];
-        newArr[targetIndex] = temp;
-
-        // Update display order field
-        const reordered = newArr.map((item, idx) => ({ ...item, display_order: idx + 1 }));
-        setCategories(reordered);
-        showToast('Category sequence updated.');
-      };
-
-      const handleDelete = (id, name) => {
-        if (confirm(`Delete category "${name}"?`)) {
-          setCategories(prev => prev.filter(c => c.id !== id));
-          showToast(`Deleted "${name}"`);
-        }
-      };
-
-      return (
-        <div className="space-y-6 max-w-4xl">
-          <div>
-            <h1 className="font-serif text-3xl text-deep-teal">Category Management</h1>
-            <p className="text-xs text-dark-grey/70 mt-1">Reorder, create, or disable categories. Category order updates the public homepage dynamically.</p>
-          </div>
-
-          {/* ADD CATEGORY FORM */}
-          <form onSubmit={handleAddCategory} className="bg-cream-white p-4 rounded-lg shadow-sm border border-sage-green/30 flex gap-3">
-            <input 
-              type="text" 
-              placeholder="New Category Name (e.g., Seasonal Collection)" 
-              value={newCategoryName} 
-              onChange={e => setNewCategoryName(e.target.value)} 
-              className="flex-1 bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
-            />
-            <button type="submit" className="px-5 py-2.5 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded">
-              Add Category
-            </button>
-          </form>
-
-          {/* LIST OF CATEGORIES */}
-          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 divide-y divide-sage-green/20">
-            {categories.map((cat, index) => (
-              <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-soft-cream/30 transition-colors text-xs">
-                <div className="flex items-center space-x-4">
-                  <span className="w-6 h-6 rounded-full bg-duck-teal/10 text-duck-teal font-semibold flex items-center justify-center text-[11px]">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-deep-teal">{cat.name}</p>
-                    <p className="text-[10px] text-dark-grey/60">/collections/{cat.slug}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button 
-                    disabled={index === 0} 
-                    onClick={() => moveCategory(index, -1)}
-                    className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
-                    title="Move Up"
-                  >
-                    <Icon name="arrowUp" className="w-4 h-4 text-deep-teal" />
-                  </button>
-                  <button 
-                    disabled={index === categories.length - 1} 
-                    onClick={() => moveCategory(index, 1)}
-                    className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
-                    title="Move Down"
-                  >
-                    <Icon name="arrowDown" className="w-4 h-4 text-deep-teal" />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(cat.id, cat.name)}
-                    className="p-1.5 border border-red-200 text-red-700 rounded hover:bg-red-50"
-                  >
-                    <Icon name="trash" className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 4: PORTFOLIO SORTING MANAGER ---
-    function AdminSortingManager({ categories, portfolio, setPortfolio, showToast }) {
-      const [selectedCatId, setSelectedCatId] = useState(categories[0]?.id || '');
-
-      const itemsInCategory = portfolio
-        .filter(p => p.category_id === selectedCatId)
-        .sort((a,b) => a.display_order - b.display_order);
-
-      const moveItem = (index, direction) => {
-        const newArr = [...itemsInCategory];
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= newArr.length) return;
-
-        // Swap
-        const temp = newArr[index];
-        newArr[index] = newArr[targetIndex];
-        newArr[targetIndex] = temp;
-
-        // Update display_order inside global state
-        const updatedIdsMap = new Map(newArr.map((item, idx) => [item.id, idx + 1]));
-
-        setPortfolio(prev => prev.map(p => {
-          if (updatedIdsMap.has(p.id)) {
-            return { ...p, display_order: updatedIdsMap.get(p.id) };
-          }
-          return p;
-        }));
-
-        showToast('Arrangement sorting order saved.');
-      };
-
-      return (
-        <div className="space-y-6 max-w-4xl">
-          <div>
-            <h1 className="font-serif text-3xl text-deep-teal">Arrangement Order Within Category</h1>
-            <p className="text-xs text-dark-grey/70 mt-1">Select a category and adjust the display position of each arrangement independently.</p>
-          </div>
-
-          <div className="bg-cream-white p-4 rounded-lg shadow-sm border border-sage-green/30">
-            <label className="block text-xs font-semibold uppercase text-deep-teal mb-2">Select Category to Reorder</label>
-            <select 
-              value={selectedCatId} 
-              onChange={e => setSelectedCatId(e.target.value)} 
-              className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
-            >
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 divide-y divide-sage-green/20">
-            {itemsInCategory.length === 0 ? (
-              <p className="p-6 text-xs text-dark-grey/60 text-center">No items found in this category.</p>
-            ) : (
-              itemsInCategory.map((item, index) => (
-                <div key={item.id} className="p-4 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-3">
-                    <span className="font-mono text-xs text-duck-teal font-semibold w-5">{index + 1}.</span>
-                    <img src={item.main_image} className="w-8 h-10 object-cover rounded bg-soft-cream" />
-                    <div>
-                      <p className="font-semibold text-deep-teal">{item.title}</p>
-                      <p className="text-[10px] text-dark-grey/60">RM {item.price}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <button 
-                      disabled={index === 0} 
-                      onClick={() => moveItem(index, -1)} 
-                      className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
-                    >
-                      <Icon name="arrowUp" className="w-4 h-4 text-deep-teal" />
-                    </button>
-                    <button 
-                      disabled={index === itemsInCategory.length - 1} 
-                      onClick={() => moveItem(index, 1)} 
-                      className="p-1.5 border border-sage-green/40 rounded hover:bg-sage-green/20 disabled:opacity-30"
-                    >
-                      <Icon name="arrowDown" className="w-4 h-4 text-deep-teal" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 5: FEATURED COLLECTION MANAGER ---
-    function AdminFeaturedManager({ portfolio, setPortfolio, showToast }) {
-      const toggleFeatured = (id) => {
-        setPortfolio(prev => prev.map(p => p.id === id ? { ...p, is_featured: !p.is_featured } : p));
-        showToast('Updated featured status.');
-      };
-
-      return (
-        <div className="space-y-6 max-w-4xl">
-          <div>
-            <h1 className="font-serif text-3xl text-deep-teal">Featured Collection Curator</h1>
-            <p className="text-xs text-dark-grey/70 mt-1">Select which floral arrangements receive prime showcase placement on the public homepage.</p>
-          </div>
-
-          <div className="bg-cream-white rounded-lg shadow-sm border border-sage-green/30 p-6 space-y-4">
-            <h3 className="font-serif text-xl text-deep-teal">Curate Showcase Items</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {portfolio.map(item => (
-                <div 
-                  key={item.id} 
-                  className={`p-4 rounded-lg border flex items-center justify-between text-xs transition-all ${item.is_featured ? 'border-duck-teal bg-duck-teal/5' : 'border-sage-green/30 bg-soft-cream/30'}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <img src={item.main_image} className="w-10 h-12 object-cover rounded bg-soft-cream" />
-                    <div>
-                      <p className="font-semibold text-deep-teal">{item.title}</p>
-                      <p className="text-[10px] font-mono text-duck-teal">RM {item.price}</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => toggleFeatured(item.id)}
-                    className={`px-3 py-1.5 rounded uppercase tracking-wider text-[10px] font-semibold transition-colors ${item.is_featured ? 'bg-duck-teal text-cream-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                  >
-                    {item.is_featured ? 'Featured' : 'Add to Featured'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 6: AI BACKGROUND REMOVAL WORKER ---
-    function AdminAIBackgroundRemoval({ portfolio, setPortfolio, showToast }) {
-      const [selectedItemId, setSelectedItemId] = useState(portfolio[0]?.id || '');
-      const [isProcessing, setIsProcessing] = useState(false);
-      const [previewTransparentUrl, setPreviewTransparentUrl] = useState(null);
-
-      const currentItem = portfolio.find(p => p.id === selectedItemId);
-
-      // Automated AI Processing Pipeline Simulation
-      const handleTriggerBgRemoval = () => {
-        if (!currentItem) return;
-        setIsProcessing(true);
-        setPreviewTransparentUrl(null);
-
-        // Simulate cloud AI worker delay
-        setTimeout(() => {
-          const transparentPngSample = currentItem.main_image; 
-          setPreviewTransparentUrl(transparentPngSample);
-          setIsProcessing(false);
-
-          // Update portfolio item
-          setPortfolio(prev => prev.map(p => p.id === currentItem.id ? {
-            ...p,
-            processed_image: transparentPngSample
-          } : p));
-
-          showToast('AI Background Removal completed! Transparent PNG stored in cloud.');
-        }, 2200);
-      };
-
-      return (
-        <div className="space-y-6 max-w-4xl">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Icon name="sparkles" className="w-6 h-6 text-duck-teal" />
-              <h1 className="font-serif text-3xl text-deep-teal">AI Background Removal Worker</h1>
-            </div>
-            <p className="text-xs text-dark-grey/70 mt-1">Extract floral arrangements cleanly from photographic backdrops to generate transparent PNG assets.</p>
-          </div>
-
-          <div className="bg-cream-white p-6 rounded-lg shadow-sm border border-sage-green/30 space-y-6">
-            <div>
-              <label className="block text-xs font-semibold uppercase text-deep-teal mb-2">Select Item to Process</label>
-              <select 
-                value={selectedItemId} 
-                onChange={e => { setSelectedItemId(e.target.value); setPreviewTransparentUrl(null); }} 
-                className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
-              >
-                {portfolio.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
-            </div>
-
-            {currentItem && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Original Photo */}
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase text-dark-grey">Original Photo</span>
-                  <div className="aspect-[4/5] bg-soft-cream rounded overflow-hidden border border-sage-green/30">
-                    <img src={currentItem.main_image} className="w-full h-full object-cover" />
-                  </div>
-                </div>
-
-                {/* AI Transparent PNG Result */}
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase text-dark-grey">AI Transparent PNG Output</span>
-                  <div className="aspect-[4/5] bg-checkerboard rounded overflow-hidden border border-sage-green/30 flex items-center justify-center relative">
-                    {isProcessing ? (
-                      <div className="text-center p-6 space-y-3">
-                        <Icon name="refresh" className="w-8 h-8 text-duck-teal animate-spin mx-auto" />
-                        <p className="text-xs font-semibold text-deep-teal uppercase tracking-widest">Removing Background...</p>
-                        <p className="text-[10px] text-dark-grey/60">Isolating leaves, petals and wrapping paper...</p>
-                      </div>
-                    ) : currentItem.processed_image ? (
-                      <img src={currentItem.processed_image} className="w-full h-full object-contain" />
-                    ) : (
-                      <p className="text-xs text-dark-grey/50 p-6 text-center">Click process to initiate background removal.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button 
-              disabled={isProcessing}
-              onClick={handleTriggerBgRemoval}
-              className="w-full py-3 bg-duck-teal hover:bg-deep-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
-            >
-              <Icon name="sparkles" className="w-4 h-4 text-sage-green" />
-              <span>{isProcessing ? 'Processing in Cloud Worker...' : 'Execute AI Background Removal'}</span>
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN SUB-TAB 7: APPEARANCE SETTINGS ---
-    function AdminAppearanceSettings({ settings, setSettings, showToast }) {
-      const [formData, setFormData] = useState(settings);
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        setSettings(formData);
-        showToast('Website appearance settings saved.');
-      };
-
-      return (
-        <div className="space-y-6 max-w-4xl">
-          <div>
-            <h1 className="font-serif text-3xl text-deep-teal">Website Appearance & Brand Settings</h1>
-            <p className="text-xs text-dark-grey/70 mt-1">Customize your brand identity, hero message, social contacts, and section visibility.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="bg-cream-white p-8 rounded-lg shadow-sm border border-sage-green/30 space-y-6 text-xs">
-            <div className="space-y-4">
-              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Brand Identity</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold uppercase text-dark-grey mb-1">Brand Name</label>
-                  <input type="text" value={formData.brand_name} onChange={e => setFormData({...formData, brand_name: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-                </div>
-                <div>
-                  <label className="block font-semibold uppercase text-dark-grey mb-1">Tagline</label>
-                  <input type="text" value={formData.brand_tagline} onChange={e => setFormData({...formData, brand_tagline: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Hero Section Content</h3>
-              <div>
-                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Title</label>
-                <input type="text" value={formData.hero_title} onChange={e => setFormData({...formData, hero_title: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-              </div>
-              <div>
-                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Subtitle</label>
-                <textarea rows={2} value={formData.hero_subtitle} onChange={e => setFormData({...formData, hero_subtitle: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded"></textarea>
-              </div>
-              <div>
-                <label className="block font-semibold uppercase text-dark-grey mb-1">Hero Backdrop Image URL</label>
-                <input type="url" value={formData.hero_image} onChange={e => setFormData({...formData, hero_image: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">WhatsApp Concierge</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold uppercase text-dark-grey mb-1">WhatsApp Number (International Format)</label>
-                  <input type="text" value={formData.whatsapp_number} onChange={e => setFormData({...formData, whatsapp_number: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-                </div>
-                <div>
-                  <label className="block font-semibold uppercase text-dark-grey mb-1">Default Inbound Message</label>
-                  <input type="text" value={formData.whatsapp_default_message} onChange={e => setFormData({...formData, whatsapp_default_message: e.target.value})} className="w-full bg-soft-cream border p-2.5 rounded" />
-                </div>
-              </div>
-            </div>
-
+<!-- ... existing code ... />
             <div className="pt-4 flex justify-end">
               <button type="submit" className="px-8 py-3 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md">
-                Save All Changes
+                Save All Changes & Sync
               </button>
             </div>
           </form>
@@ -1752,7 +1111,120 @@
       );
     }
 
-    // --- ADMIN SUB-TAB 8: DATABASE & GITHUB DEPLOYMENT ---
+    // --- ADMIN SUB-TAB 8: ACCOUNT CREDENTIALS SETTINGS ---
+    function AdminAccountSettings({ adminCreds, setAdminCreds, showToast }) {
+      const [currentPassword, setCurrentPassword] = useState('');
+      const [newUsername, setNewUsername] = useState(adminCreds.username);
+      const [newPassword, setNewPassword] = useState('');
+      const [confirmPassword, setConfirmPassword] = useState('');
+
+      const handleUpdateCredentials = (e) => {
+        e.preventDefault();
+        
+        if (currentPassword !== adminCreds.password) {
+          showToast('Current password is incorrect.', 'error');
+          return;
+        }
+
+        if (!newUsername.trim()) {
+          showToast('Username/Email cannot be empty.', 'error');
+          return;
+        }
+
+        if (newPassword && newPassword !== confirmPassword) {
+          showToast('New passwords do not match.', 'error');
+          return;
+        }
+
+        const updatedPassword = newPassword.trim() ? newPassword : adminCreds.password;
+
+        setAdminCreds({
+          username: newUsername.trim(),
+          password: updatedPassword
+        });
+
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        showToast('Admin login credentials updated successfully!');
+      };
+
+      return (
+        <div className="space-y-6 max-w-2xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Account Credentials</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">
+              Update your administrator login username/email and password for securing the Control Center.
+            </p>
+          </div>
+
+          <div className="bg-cream-white p-8 rounded-lg shadow-sm border border-sage-green/30 space-y-6 text-xs">
+            <div className="p-4 bg-soft-cream/80 border-l-4 border-duck-teal rounded text-dark-grey text-xs">
+              <p className="font-semibold text-deep-teal mb-1">Current Active Account</p>
+              <p>Username / Email: <span className="font-mono text-duck-teal font-semibold">{adminCreds.username}</span></p>
+            </div>
+
+            <form onSubmit={handleUpdateCredentials} className="space-y-4">
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Current Password (Required to verify identity)</label>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="Enter current password"
+                  value={currentPassword} 
+                  onChange={e => setCurrentPassword(e.target.value)} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-sage-green/20">
+                <label className="block font-semibold uppercase text-dark-grey mb-1">New Admin Username / Email</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newUsername} 
+                  onChange={e => setNewUsername(e.target.value)} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">New Password (Leave blank to keep current password)</label>
+                <input 
+                  type="password" 
+                  placeholder="Enter new password"
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Confirm New Password</label>
+                <input 
+                  type="password" 
+                  placeholder="Re-enter new password"
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button 
+                  type="submit" 
+                  className="px-6 py-3 bg-duck-teal hover:bg-deep-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md transition-colors"
+                >
+                  Update Credentials
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 9: DATABASE & GITHUB DEPLOYMENT ---
     function AdminDatabaseGuide() {
       const sqlSchema = `-- ==========================================
 -- LUXURY FLORAL PORTFOLIO DATABASE SCHEMA
