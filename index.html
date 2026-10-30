@@ -14,11 +14,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- React & ReactDOM CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
   
-  <!-- Babel Standalone for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Babel Standalone for JSX compilation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -83,9 +83,19 @@
 </head>
 <body>
 
-  <div id="root"></div>
+  <div id="root">
+    <!-- Fallback message in case React fails to initialize -->
+    <div className="min-h-screen flex items-center justify-center p-6 text-center text-dark-grey">
+      <p className="text-sm">Initializing L'Éternel Botanical Portfolio...</p>
+    </div>
+  </div>
 
   <script type="text/babel">
+    // Catch global unhandled errors to avoid quiet white screen
+    window.addEventListener('error', function(e) {
+      console.error("Global Error Caught:", e.error || e.message);
+    });
+
     const { useState, useEffect, useMemo, useRef } = React;
 
     // --- INITIAL DATA SEEDING (Saves in LocalStorage as Fallback / Supabase Mirror) ---
@@ -220,7 +230,7 @@
       show_contact: true
     };
 
-    // --- ICON HELPER COMPONENTS (Inline SVG for Zero External Dependencies) ---
+    // --- ICON HELPER COMPONENTS (All SVGs wrapped properly inside single root elements) ---
     const Icon = ({ name, className = "w-5 h-5", onClick }) => {
       const icons = {
         flower: <path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m0 9a4.5 4.5 0 1 1-4.5-4.5M12 12a4.5 4.5 0 1 0 4.5 4.5M12 12v9m-4.5-4.5a4.5 4.5 0 1 1 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>,
@@ -242,7 +252,12 @@
         database: <path d="M12 2C6.5 2 2 3.8 2 6v12c0 2.2 4.5 4 10 4s10-1.8 10-4V6c0-2.2-4.5-4-10-4z M2 12c0 2.2 4.5 4 10 4s10-1.8 10-4 M2 6c0 2.2 4.5 4 10 4s10-1.8 10-4" stroke="currentColor" strokeWidth="2" fill="none"/>,
         refresh: <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" strokeWidth="2" fill="none"/>,
         eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" strokeWidth="2" fill="none"/>,
-        search: <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2"/>,
+        search: (
+          <g>
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" fill="none"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2"/>
+          </g>
+        ),
         filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" strokeWidth="2" fill="none"/>
       };
 
@@ -257,18 +272,30 @@
     function App() {
       // Local state management with fallback to LocalStorage
       const [categories, setCategories] = useState(() => {
-        const saved = localStorage.getItem('floral_categories');
-        return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+        try {
+          const saved = localStorage.getItem('floral_categories');
+          return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+        } catch(e) {
+          return INITIAL_CATEGORIES;
+        }
       });
 
       const [portfolio, setPortfolio] = useState(() => {
-        const saved = localStorage.getItem('floral_portfolio');
-        return saved ? JSON.parse(saved) : INITIAL_PORTFOLIO;
+        try {
+          const saved = localStorage.getItem('floral_portfolio');
+          return saved ? JSON.parse(saved) : INITIAL_PORTFOLIO;
+        } catch(e) {
+          return INITIAL_PORTFOLIO;
+        }
       });
 
       const [settings, setSettings] = useState(() => {
-        const saved = localStorage.getItem('floral_settings');
-        return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+        try {
+          const saved = localStorage.getItem('floral_settings');
+          return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+        } catch(e) {
+          return INITIAL_SETTINGS;
+        }
       });
 
       // App Mode & Auth State
@@ -1517,8 +1544,6 @@
 
     // --- ADMIN SUB-TAB 5: FEATURED COLLECTION MANAGER ---
     function AdminFeaturedManager({ portfolio, setPortfolio, showToast }) {
-      const featuredItems = portfolio.filter(p => p.is_featured);
-
       const toggleFeatured = (id) => {
         setPortfolio(prev => prev.map(p => p.id === id ? { ...p, is_featured: !p.is_featured } : p));
         showToast('Updated featured status.');
@@ -1574,9 +1599,8 @@
         setIsProcessing(true);
         setPreviewTransparentUrl(null);
 
-        // Simulate cloud AI worker delay (Step 1-8 in specs)
+        // Simulate cloud AI worker delay
         setTimeout(() => {
-          // Use canvas to cut white background or apply high-quality transparent PNG backdrop placeholder
           const transparentPngSample = currentItem.main_image; 
           setPreviewTransparentUrl(transparentPngSample);
           setIsProcessing(false);
@@ -1798,8 +1822,12 @@ CREATE POLICY "Admin Full Portfolio" ON public.portfolio_items FOR ALL USING (au
       );
     }
 
-    // Render App
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    // Render App safely with Error Boundary logic
+    try {
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    } catch(err) {
+      console.error("ReactDOM Render Error:", err);
+    }
   </script>
 </body>
 </html>
