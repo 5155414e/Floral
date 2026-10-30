@@ -84,16 +84,18 @@
 <body>
 
   <div id="root">
-    <!-- Fallback message in case React fails to initialize -->
-    <div className="min-h-screen flex items-center justify-center p-6 text-center text-dark-grey">
-      <p className="text-sm">Initializing L'Éternel Botanical Portfolio...</p>
+    <!-- Loading fallback display -->
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-dark-grey bg-cream-white">
+      <div className="w-12 h-12 border-4 border-duck-teal border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p className="font-serif text-xl text-deep-teal">Loading L'Éternel Botanical Portfolio...</p>
+      <p className="text-xs text-dark-grey/60 mt-1">Initialising Haute Couture Floral System</p>
     </div>
   </div>
 
   <script type="text/babel">
-    // Catch global unhandled errors to avoid quiet white screen
+    // Global Error Handler
     window.addEventListener('error', function(e) {
-      console.error("Global Error Caught:", e.error || e.message);
+      console.error("Global React Error Caught:", e.error || e.message);
     });
 
     const { useState, useEffect, useMemo, useRef } = React;
@@ -114,7 +116,7 @@
       return null;
     }
 
-    // --- INITIAL DATA SEEDING (Saves in LocalStorage as Fallback / Supabase Mirror) ---
+    // --- INITIAL DATA SEEDING ---
     const INITIAL_CATEGORIES = [
       { id: 'cat-1', name: 'Hand Bouquet', slug: 'hand-bouquet', description: 'Curated artisanal hand-tied bouquets', display_order: 1, is_active: true },
       { id: 'cat-2', name: 'Bridal Bouquet', slug: 'bridal-bouquet', description: 'Ethereal bridal florals for everlasting memories', display_order: 2, is_active: true },
@@ -141,10 +143,6 @@
         publication_status: 'published',
         main_image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80',
         processed_image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80',
-        additional_images: [
-          'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=800&q=80',
-          'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=800&q=80'
-        ],
         created_at: '2026-01-10T10:00:00Z'
       },
       {
@@ -163,7 +161,6 @@
         publication_status: 'published',
         main_image: 'https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=1000&q=80',
         processed_image: 'https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=1000&q=80',
-        additional_images: [],
         created_at: '2026-01-12T14:30:00Z'
       },
       {
@@ -182,7 +179,6 @@
         publication_status: 'published',
         main_image: 'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=1000&q=80',
         processed_image: 'https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=1000&q=80',
-        additional_images: [],
         created_at: '2026-01-15T09:15:00Z'
       },
       {
@@ -201,27 +197,7 @@
         publication_status: 'published',
         main_image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=1000&q=80',
         processed_image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=1000&q=80',
-        additional_images: [],
         created_at: '2026-01-18T16:20:00Z'
-      },
-      {
-        id: 'pf-5',
-        category_id: 'cat-5',
-        title: 'Celestial Dome',
-        slug: 'celestial-dome',
-        price: 260,
-        show_price: true,
-        flower_types: ['Preserved Hydrangea', 'Cotton Flower', 'Bunny Tail', 'Gold Leaf'],
-        floral_message: 'A timeless piece of nature suspended under delicate glass.',
-        description: 'Handcrafted preserved floral glass cloche that retains soft texture and vivid color for up to 3 years.',
-        is_featured: false,
-        featured_order: 5,
-        display_order: 1,
-        publication_status: 'published',
-        main_image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1000&q=80',
-        processed_image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1000&q=80',
-        additional_images: [],
-        created_at: '2026-01-20T11:00:00Z'
       }
     ];
 
@@ -248,7 +224,7 @@
       show_contact: true
     };
 
-    // --- ICON HELPER COMPONENTS (All SVGs wrapped properly inside single root elements) ---
+    // --- ICON COMPONENT ---
     const Icon = ({ name, className = "w-5 h-5", onClick }) => {
       const icons = {
         flower: <path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m0 9a4.5 4.5 0 1 1-4.5-4.5M12 12a4.5 4.5 0 1 0 4.5 4.5M12 12v9m-4.5-4.5a4.5 4.5 0 1 1 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>,
@@ -268,7 +244,6 @@
         settings: <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" fill="none"/>,
         lock: <path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zm-11 0V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" fill="none"/>,
         database: <path d="M12 2C6.5 2 2 3.8 2 6v12c0 2.2 4.5 4 10 4s10-1.8 10-4V6c0-2.2-4.5-4-10-4z M2 12c0 2.2 4.5 4 10 4s10-1.8 10-4 M2 6c0 2.2 4.5 4 10 4s10-1.8 10-4" stroke="currentColor" strokeWidth="2" fill="none"/>,
-        refresh: <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" strokeWidth="2" fill="none"/>,
         eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" strokeWidth="2" fill="none"/>,
         search: (
           <g>
@@ -288,7 +263,6 @@
 
     // --- MAIN APP COMPONENT ---
     function App() {
-      // Local state management with fallback to LocalStorage & Supabase Cloud
       const [categories, setCategories] = useState(() => {
         try {
           const saved = localStorage.getItem('floral_categories');
@@ -316,7 +290,6 @@
         }
       });
 
-      // Admin login credentials state
       const [adminCreds, setAdminCreds] = useState(() => {
         try {
           const saved = localStorage.getItem('floral_admin_creds');
@@ -326,16 +299,13 @@
         }
       });
 
-      // App Mode & Auth State
-      const [viewMode, setViewMode] = useState('public'); // 'public' or 'admin'
+      const [viewMode, setViewMode] = useState('public');
       const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
       const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
-      const [selectedArrangement, setSelectedArrangement] = useState(null); // Detail modal
+      const [selectedArrangement, setSelectedArrangement] = useState(null);
       const [searchQuery, setSearchQuery] = useState('');
       const [isCloudSynced, setIsCloudSynced] = useState(false);
-
-      // Notifications
       const [toast, setToast] = useState(null);
 
       const showToast = (message, type = 'success') => {
@@ -343,40 +313,28 @@
         setTimeout(() => setToast(null), 3500);
       };
 
-      // Persist Admin Credentials
       useEffect(() => {
         localStorage.setItem('floral_admin_creds', JSON.stringify(adminCreds));
       }, [adminCreds]);
 
-      // Load data from Supabase if credentials are provided
       useEffect(() => {
         const client = getSupabaseClient(settings.supabase_url, settings.supabase_anon_key);
         if (client) {
           setIsCloudSynced(true);
-          // Sync settings from Supabase
           client.from('website_settings').select('*').single().then(({ data, error }) => {
-            if (data && !error) {
-              setSettings(prev => ({ ...prev, ...data }));
-            }
+            if (data && !error) setSettings(prev => ({ ...prev, ...data }));
           });
-          // Sync categories from Supabase
           client.from('categories').select('*').order('display_order', { ascending: true }).then(({ data, error }) => {
-            if (data && data.length > 0 && !error) {
-              setCategories(data);
-            }
+            if (data && data.length > 0 && !error) setCategories(data);
           });
-          // Sync portfolio from Supabase
           client.from('portfolio_items').select('*').order('display_order', { ascending: true }).then(({ data, error }) => {
-            if (data && data.length > 0 && !error) {
-              setPortfolio(data);
-            }
+            if (data && data.length > 0 && !error) setPortfolio(data);
           });
         } else {
           setIsCloudSynced(false);
         }
       }, [settings.supabase_url, settings.supabase_anon_key]);
 
-      // Persist changes to LocalStorage
       useEffect(() => {
         localStorage.setItem('floral_categories', JSON.stringify(categories));
       }, [categories]);
@@ -387,22 +345,18 @@
 
       useEffect(() => {
         localStorage.setItem('floral_settings', JSON.stringify(settings));
-        
-        // Sync to Supabase if configured
         const client = getSupabaseClient(settings.supabase_url, settings.supabase_anon_key);
         if (client) {
           client.from('website_settings').upsert({ id: 1, ...settings }).then(({ error }) => {
-            if (error) console.log("Supabase Settings Sync Note:", error.message);
+            if (error) console.log("Supabase Sync Note:", error.message);
           });
         }
       }, [settings]);
 
-      // Computed published portfolio
       const publishedPortfolio = useMemo(() => {
         return portfolio.filter(item => item.publication_status === 'published');
       }, [portfolio]);
 
-      // Filtered public portfolio
       const filteredPortfolio = useMemo(() => {
         return publishedPortfolio.filter(item => {
           const matchesCategory = selectedCategoryFilter === 'all' || item.category_id === selectedCategoryFilter;
@@ -412,7 +366,6 @@
         }).sort((a, b) => a.display_order - b.display_order);
       }, [publishedPortfolio, selectedCategoryFilter, searchQuery]);
 
-      // Featured Collection items
       const featuredPortfolio = useMemo(() => {
         return publishedPortfolio
           .filter(item => item.is_featured)
@@ -421,7 +374,6 @@
 
       return (
         <div className="min-h-screen flex flex-col selection:bg-duck-teal selection:text-white">
-          {/* Toast Notification */}
           {toast && (
             <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-md shadow-2xl flex items-center space-x-3 transition-all duration-300 ${toast.type === 'error' ? 'bg-red-900 text-white' : 'bg-deep-teal text-cream-white border border-duck-teal'}`}>
               <Icon name={toast.type === 'error' ? 'x' : 'check'} className="w-5 h-5 text-sage-green" />
@@ -429,7 +381,6 @@
             </div>
           )}
 
-          {/* VIEW SWITCHER / HEADER BANNER */}
           {viewMode === 'public' ? (
             <PublicWebsite 
               settings={settings}
@@ -449,7 +400,7 @@
               isAuthenticated={isAdminAuthenticated}
               setIsAuthenticated={setIsAdminAuthenticated}
               activeTab={activeAdminTab}
-              setActiveTab={setActiveTab}
+              setActiveTab={setActiveAdminTab}
               categories={categories}
               setCategories={setCategories}
               portfolio={portfolio}
@@ -464,7 +415,6 @@
             />
           )}
 
-          {/* PORTFOLIO DETAIL MODAL */}
           {selectedArrangement && (
             <ArrangementDetailModal 
               item={selectedArrangement} 
@@ -474,7 +424,6 @@
             />
           )}
 
-          {/* FLOATING WHATSAPP CTA FOR PUBLIC VIEW */}
           {viewMode === 'public' && (
             <a 
               href={`https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(settings.whatsapp_default_message)}`}
@@ -494,7 +443,7 @@
     }
 
     // ==========================================
-    // 1. PUBLIC WEBSITE COMPONENT
+    // PUBLIC WEBSITE COMPONENT
     // ==========================================
     function PublicWebsite({ 
       settings, 
@@ -511,7 +460,6 @@
     }) {
       return (
         <div className="flex-1 flex flex-col">
-          {/* TOP ANNOUNCEMENT / ADMIN PORTAL LINK */}
           <div className="bg-deep-teal text-cream-white text-xs py-2 px-6 flex justify-between items-center border-b border-duck-teal/40">
             <div className="flex items-center space-x-2">
               <p className="font-light tracking-widest uppercase text-[10px] sm:text-xs">
@@ -530,7 +478,6 @@
             </button>
           </div>
 
-          {/* NAVIGATION BAR */}
           <header className="sticky top-0 z-30 bg-cream-white/90 backdrop-blur-md border-b border-sage-green/20">
             <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
               <div className="flex items-center space-x-3">
@@ -549,7 +496,6 @@
             </div>
           </header>
 
-          {/* HERO SECTION */}
           {settings.show_hero && (
             <section id="hero" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-deep-teal text-cream-white px-6 py-20">
               <div className="absolute inset-0 z-0 opacity-35 bg-cover bg-center filter contrast-125" style={{ backgroundImage: `url('${settings.hero_image}')` }}></div>
@@ -583,7 +529,6 @@
             </section>
           )}
 
-          {/* CATEGORY SHORTCUTS SECTION */}
           {settings.show_categories && (
             <section id="categories" className="py-16 bg-cream-white border-b border-sage-green/20">
               <div className="max-w-7xl mx-auto px-6">
@@ -618,7 +563,6 @@
             </section>
           )}
 
-          {/* FEATURED COLLECTION SECTION */}
           {settings.show_featured && featuredPortfolio.length > 0 && selectedCategoryFilter === 'all' && (
             <section className="py-20 bg-soft-cream/60">
               <div className="max-w-7xl mx-auto px-6">
@@ -637,7 +581,6 @@
             </section>
           )}
 
-          {/* MAIN PORTFOLIO GALLERY */}
           <section id="gallery" className="py-20 max-w-7xl mx-auto px-6 w-full">
             <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
               <div>
@@ -645,7 +588,6 @@
                 <h2 className="font-serif text-3xl sm:text-4xl text-deep-teal">Complete Portfolio</h2>
               </div>
               
-              {/* Search Bar */}
               <div className="relative w-full md:w-72">
                 <input 
                   type="text"
@@ -673,7 +615,6 @@
             )}
           </section>
 
-          {/* PHILOSOPHY / ABOUT SECTION */}
           {settings.show_about && (
             <section id="about" className="py-24 bg-deep-teal text-cream-white relative overflow-hidden">
               <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -709,7 +650,6 @@
             </section>
           )}
 
-          {/* CONTACT & ENQUIRY SECTION */}
           {settings.show_contact && (
             <section id="contact" className="py-20 bg-cream-white">
               <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
@@ -739,7 +679,6 @@
             </section>
           )}
 
-          {/* FOOTER */}
           <footer className="bg-deep-teal text-cream-white/70 py-12 border-t border-duck-teal/40 text-xs">
             <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="flex items-center space-x-3">
@@ -762,7 +701,6 @@
       );
     }
 
-    // --- PORTFOLIO CARD ---
     function PortfolioCard({ item, onSelect, featured = false }) {
       return (
         <div 
@@ -812,7 +750,6 @@
       );
     }
 
-    // --- ARRANGEMENT DETAIL MODAL ---
     function ArrangementDetailModal({ item, categoryName, settings, onClose }) {
       const whatsappMsg = `Hi! I am interested in booking or inquiring about the "${item.title}" arrangement (${categoryName}). Could you please advise availability?`;
 
@@ -826,7 +763,6 @@
               <Icon name="x" className="w-5 h-5" />
             </button>
 
-            {/* Left Image View */}
             <div className="w-full md:w-1/2 bg-soft-cream p-6 flex items-center justify-center border-b md:border-b-0 md:border-r border-sage-green/20">
               <div className="w-full max-w-md aspect-[4/5] rounded-lg overflow-hidden bg-checkerboard shadow-lg relative">
                 <img 
@@ -837,7 +773,6 @@
               </div>
             </div>
 
-            {/* Right Details */}
             <div className="w-full md:w-1/2 p-8 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-duck-teal">
@@ -892,7 +827,7 @@
     }
 
     // ==========================================
-    // 2. ADMIN DASHBOARD COMPONENT
+    // ADMIN DASHBOARD COMPONENT
     // ==========================================
     function AdminDashboard({
       isAuthenticated,
@@ -913,7 +848,6 @@
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
 
-      // Login handler
       const handleLogin = (e) => {
         e.preventDefault();
         if (email.trim().toLowerCase() === adminCreds.username.trim().toLowerCase() && password === adminCreds.password) {
@@ -940,7 +874,7 @@
                   <input 
                     type="text" 
                     required
-                    placeholder="Enter your admin username or email"
+                    placeholder="Enter admin username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
@@ -951,7 +885,7 @@
                   <input 
                     type="password" 
                     required
-                    placeholder="Enter your password"
+                    placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-soft-cream border border-sage-green/40 px-4 py-2.5 rounded text-xs focus:outline-none focus:border-duck-teal"
@@ -980,7 +914,6 @@
 
       return (
         <div className="min-h-screen bg-soft-cream flex flex-col md:flex-row">
-          {/* ADMIN SIDEBAR */}
           <aside className="w-full md:w-64 bg-deep-teal text-cream-white p-6 flex flex-col justify-between border-r border-duck-teal/40">
             <div className="space-y-8">
               <div className="flex items-center space-x-3 pb-6 border-b border-duck-teal/40">
@@ -1033,7 +966,6 @@
             </div>
           </aside>
 
-          {/* MAIN ADMIN CONTENT PANEL */}
           <main className="flex-1 p-6 md:p-10 overflow-y-auto">
             {activeTab === 'dashboard' && (
               <AdminOverview 
@@ -1100,7 +1032,684 @@
         </div>
       );
     }
-<!-- ... existing code ... />
+
+    // --- ADMIN SUB-TAB 1: OVERVIEW ---
+    function AdminOverview({ portfolio, categories, setActiveTab }) {
+      const totalCount = portfolio.length;
+      const publishedCount = portfolio.filter(i => i.publication_status === 'published').length;
+      const featuredCount = portfolio.filter(i => i.is_featured).length;
+
+      return (
+        <div className="space-y-8">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Dashboard Overview</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Manage your luxury floral catalog, category display, and AI processing.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-cream-white p-6 rounded-lg border border-sage-green/30 shadow-sm">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-duck-teal">Total Arrangements</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{totalCount}</p>
+              <span className="text-[10px] text-dark-grey/60 mt-1 block">{publishedCount} Published Online</span>
+            </div>
+            <div className="bg-cream-white p-6 rounded-lg border border-sage-green/30 shadow-sm">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-duck-teal">Categories</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{categories.length}</p>
+              <span className="text-[10px] text-dark-grey/60 mt-1 block">Active Portfolio Sections</span>
+            </div>
+            <div className="bg-cream-white p-6 rounded-lg border border-sage-green/30 shadow-sm">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-duck-teal">Featured Items</span>
+              <p className="font-serif text-4xl text-deep-teal mt-2">{featuredCount}</p>
+              <span className="text-[10px] text-dark-grey/60 mt-1 block">Hero Gallery Showcase</span>
+            </div>
+          </div>
+
+          <div className="bg-cream-white p-6 rounded-lg border border-sage-green/30 shadow-sm space-y-4">
+            <h3 className="font-serif text-xl text-deep-teal">Quick Operations</h3>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <button 
+                onClick={() => setActiveTab('portfolio')}
+                className="px-5 py-3 bg-duck-teal text-cream-white rounded hover:bg-deep-teal transition-colors font-medium flex items-center space-x-2"
+              >
+                <Icon name="plus" className="w-4 h-4" />
+                <span>Add New Floral Arrangement</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('categories')}
+                className="px-5 py-3 bg-soft-cream border border-sage-green/40 rounded hover:bg-sage-green/20 transition-colors font-medium text-dark-grey"
+              >
+                Manage Categories
+              </button>
+              <button 
+                onClick={() => setActiveTab('background-removal')}
+                className="px-5 py-3 bg-soft-cream border border-sage-green/40 rounded hover:bg-sage-green/20 transition-colors font-medium text-dark-grey flex items-center space-x-1.5"
+              >
+                <Icon name="sparkles" className="w-4 h-4 text-duck-teal" />
+                <span>AI Background Removal</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 2: PORTFOLIO MANAGER ---
+    function AdminPortfolioManager({ portfolio, setPortfolio, categories, showToast }) {
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingItem, setEditingItem] = useState(null);
+
+      const [formData, setFormData] = useState({
+        title: '',
+        category_id: categories[0]?.id || '',
+        price: '',
+        show_price: true,
+        flower_types: '',
+        floral_message: '',
+        description: '',
+        main_image: '',
+        is_featured: false,
+        publication_status: 'published'
+      });
+
+      const handleOpenCreate = () => {
+        setEditingItem(null);
+        setFormData({
+          title: '',
+          category_id: categories[0]?.id || '',
+          price: '280',
+          show_price: true,
+          flower_types: 'Rose, Eustoma, Eucalyptus',
+          floral_message: 'Crafted with passion and elegance.',
+          description: 'A bespoke botanical creation.',
+          main_image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1000&q=80',
+          is_featured: false,
+          publication_status: 'published'
+        });
+        setIsModalOpen(true);
+      };
+
+      const handleOpenEdit = (item) => {
+        setEditingItem(item);
+        setFormData({
+          title: item.title,
+          category_id: item.category_id,
+          price: item.price,
+          show_price: item.show_price,
+          flower_types: item.flower_types.join(', '),
+          floral_message: item.floral_message,
+          description: item.description,
+          main_image: item.main_image,
+          is_featured: item.is_featured,
+          publication_status: item.publication_status
+        });
+        setIsModalOpen(true);
+      };
+
+      const handleSave = (e) => {
+        e.preventDefault();
+        const flowerArray = formData.flower_types.split(',').map(s => s.trim()).filter(Boolean);
+
+        if (editingItem) {
+          setPortfolio(prev => prev.map(item => item.id === editingItem.id ? {
+            ...item,
+            ...formData,
+            price: parseFloat(formData.price) || 0,
+            flower_types: flowerArray
+          } : item));
+          showToast('Arrangement updated successfully!');
+        } else {
+          const newItem = {
+            id: 'pf-' + Date.now(),
+            ...formData,
+            price: parseFloat(formData.price) || 0,
+            flower_types: flowerArray,
+            processed_image: formData.main_image,
+            display_order: portfolio.length + 1,
+            featured_order: portfolio.length + 1,
+            created_at: new Date().toISOString()
+          };
+          setPortfolio(prev => [newItem, ...prev]);
+          showToast('New arrangement added!');
+        }
+        setIsModalOpen(false);
+      };
+
+      const handleDelete = (id) => {
+        if (confirm('Are you sure you want to delete this arrangement?')) {
+          setPortfolio(prev => prev.filter(item => item.id !== id));
+          showToast('Arrangement deleted.', 'error');
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-serif text-3xl text-deep-teal">Portfolio Management</h1>
+              <p className="text-xs text-dark-grey/70 mt-1">Create, update, or remove floral arrangements.</p>
+            </div>
+            <button 
+              onClick={handleOpenCreate}
+              className="px-5 py-3 bg-duck-teal hover:bg-deep-teal text-cream-white text-xs font-semibold uppercase tracking-widest rounded shadow flex items-center space-x-2"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span>Add Arrangement</span>
+            </button>
+          </div>
+
+          <div className="bg-cream-white rounded-lg border border-sage-green/30 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-dark-grey">
+                <thead className="bg-soft-cream border-b border-sage-green/30 uppercase tracking-wider text-[10px] text-duck-teal font-semibold">
+                  <tr>
+                    <th className="p-4">Item</th>
+                    <th className="p-4">Category</th>
+                    <th className="p-4">Price (RM)</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sage-green/20">
+                  {portfolio.map(item => (
+                    <tr key={item.id} className="hover:bg-soft-cream/40 transition-colors">
+                      <td className="p-4 flex items-center space-x-3">
+                        <img src={item.processed_image || item.main_image} alt="" className="w-10 h-10 object-cover rounded bg-checkerboard" />
+                        <div>
+                          <span className="font-serif text-base text-deep-teal block font-medium">{item.title}</span>
+                          <span className="text-[10px] text-dark-grey/60 italic">{item.floral_message}</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {categories.find(c => c.id === item.category_id)?.name || 'Unassigned'}
+                      </td>
+                      <td className="p-4 font-semibold text-duck-teal">
+                        RM {item.price}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider font-semibold ${item.publication_status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {item.publication_status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button onClick={() => handleOpenEdit(item)} className="p-2 hover:text-duck-teal">
+                          <Icon name="edit" className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} className="p-2 hover:text-red-600">
+                          <Icon name="trash" className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deep-teal/70 backdrop-blur-sm">
+              <div className="bg-cream-white max-w-xl w-full p-6 rounded-lg shadow-2xl border border-sage-green/30 max-h-[90vh] overflow-y-auto space-y-4">
+                <h3 className="font-serif text-2xl text-deep-teal">{editingItem ? 'Edit Arrangement' : 'Add New Arrangement'}</h3>
+                
+                <form onSubmit={handleSave} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-semibold uppercase mb-1">Arrangement Title</label>
+                    <input 
+                      type="text" required 
+                      value={formData.title} 
+                      onChange={e => setFormData({...formData, title: e.target.value})} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold uppercase mb-1">Category</label>
+                      <select 
+                        value={formData.category_id} 
+                        onChange={e => setFormData({...formData, category_id: e.target.value})}
+                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                      >
+                        {categories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold uppercase mb-1">Price (RM)</label>
+                      <input 
+                        type="number" required 
+                        value={formData.price} 
+                        onChange={e => setFormData({...formData, price: e.target.value})} 
+                        className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold uppercase mb-1">Flower Types (Comma separated)</label>
+                    <input 
+                      type="text" 
+                      value={formData.flower_types} 
+                      onChange={e => setFormData({...formData, flower_types: e.target.value})} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold uppercase mb-1">Floral Message / Poetic Quote</label>
+                    <input 
+                      type="text" 
+                      value={formData.floral_message} 
+                      onChange={e => setFormData({...formData, floral_message: e.target.value})} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold uppercase mb-1">Image URL</label>
+                    <input 
+                      type="url" required 
+                      value={formData.main_image} 
+                      onChange={e => setFormData({...formData, main_image: e.target.value})} 
+                      className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end space-x-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsModalOpen(false)}
+                      className="px-5 py-2.5 border border-dark-grey/30 rounded uppercase tracking-wider"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2.5 bg-duck-teal text-cream-white rounded uppercase tracking-wider font-semibold"
+                    >
+                      Save Arrangement
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 3: CATEGORY MANAGER ---
+    function AdminCategoryManager({ categories, setCategories, showToast }) {
+      const [newCategoryName, setNewCategoryName] = useState('');
+
+      const handleAdd = (e) => {
+        e.preventDefault();
+        if (!newCategoryName.trim()) return;
+        const newCat = {
+          id: 'cat-' + Date.now(),
+          name: newCategoryName.trim(),
+          slug: newCategoryName.toLowerCase().replace(/\s+/g, '-'),
+          description: 'Custom botanical section',
+          display_order: categories.length + 1,
+          is_active: true
+        };
+        setCategories(prev => [...prev, newCat]);
+        setNewCategoryName('');
+        showToast('New category added!');
+      };
+
+      const handleMove = (index, direction) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= categories.length) return;
+        const updated = [...categories];
+        const temp = updated[index];
+        updated[index] = updated[targetIndex];
+        updated[targetIndex] = temp;
+        
+        // Re-assign order numbers
+        const reordered = updated.map((c, i) => ({ ...c, display_order: i + 1 }));
+        setCategories(reordered);
+        showToast('Category sequence updated!');
+      };
+
+      const handleDelete = (id) => {
+        if (confirm('Delete this category?')) {
+          setCategories(prev => prev.filter(c => c.id !== id));
+          showToast('Category removed.', 'error');
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Category Management</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Add, rename, or re-order portfolio collections.</p>
+          </div>
+
+          <form onSubmit={handleAdd} className="bg-cream-white p-4 rounded-lg border border-sage-green/30 flex gap-3">
+            <input 
+              type="text" 
+              placeholder="New Category Name (e.g. Centerpiece)" 
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+              className="flex-1 bg-soft-cream border border-sage-green/40 px-4 py-2 rounded text-xs focus:outline-none focus:border-duck-teal"
+            />
+            <button type="submit" className="px-5 py-2 bg-duck-teal text-cream-white text-xs font-semibold uppercase tracking-wider rounded">
+              Add
+            </button>
+          </form>
+
+          <div className="bg-cream-white rounded-lg border border-sage-green/30 shadow-sm divide-y divide-sage-green/20">
+            {categories.map((cat, idx) => (
+              <div key={cat.id} className="p-4 flex items-center justify-between text-xs">
+                <div>
+                  <span className="font-serif text-lg text-deep-teal font-medium block">{cat.name}</span>
+                  <span className="text-[10px] text-dark-grey/60 font-mono">Slug: /{cat.slug}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => handleMove(idx, -1)} disabled={idx === 0} className="p-1.5 border rounded hover:bg-soft-cream disabled:opacity-30">
+                    <Icon name="arrowUp" className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleMove(idx, 1)} disabled={idx === categories.length - 1} className="p-1.5 border rounded hover:bg-soft-cream disabled:opacity-30">
+                    <Icon name="arrowDown" className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(cat.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
+                    <Icon name="trash" className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 4: PORTFOLIO ITEM SORTING ---
+    function AdminSortingManager({ categories, portfolio, setPortfolio, showToast }) {
+      const [selectedCat, setSelectedCat] = useState(categories[0]?.id || '');
+
+      const catItems = useMemo(() => {
+        return portfolio.filter(i => i.category_id === selectedCat).sort((a,b) => a.display_order - b.display_order);
+      }, [portfolio, selectedCat]);
+
+      const handleMove = (index, direction) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= catItems.length) return;
+        const itemsCopy = [...catItems];
+        const temp = itemsCopy[index];
+        itemsCopy[index] = itemsCopy[targetIndex];
+        itemsCopy[targetIndex] = temp;
+
+        const updatedMap = new Map(itemsCopy.map((item, i) => [item.id, i + 1]));
+
+        setPortfolio(prev => prev.map(item => {
+          if (updatedMap.has(item.id)) {
+            return { ...item, display_order: updatedMap.get(item.id) };
+          }
+          return item;
+        }));
+        showToast('Arrangement sorting order saved!');
+      };
+
+      return (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Arrangement Sorting</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Re-order how arrangements appear within a category.</p>
+          </div>
+
+          <div className="bg-cream-white p-4 rounded-lg border border-sage-green/30">
+            <label className="block text-xs font-semibold uppercase text-duck-teal mb-2">Select Category to Sort</label>
+            <select 
+              value={selectedCat} 
+              onChange={e => setSelectedCat(e.target.value)}
+              className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded text-xs"
+            >
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-cream-white rounded-lg border border-sage-green/30 shadow-sm divide-y divide-sage-green/20">
+            {catItems.length === 0 ? (
+              <p className="p-6 text-xs text-center text-dark-grey/60">No arrangements in this category yet.</p>
+            ) : (
+              catItems.map((item, idx) => (
+                <div key={item.id} className="p-4 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-3">
+                    <span className="font-mono text-xs text-duck-teal font-bold w-6">#{idx + 1}</span>
+                    <img src={item.processed_image || item.main_image} className="w-10 h-10 object-cover rounded bg-checkerboard" />
+                    <span className="font-serif text-base text-deep-teal">{item.title}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button onClick={() => handleMove(idx, -1)} disabled={idx === 0} className="p-1.5 border rounded hover:bg-soft-cream disabled:opacity-30">
+                      <Icon name="arrowUp" className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleMove(idx, 1)} disabled={idx === catItems.length - 1} className="p-1.5 border rounded hover:bg-soft-cream disabled:opacity-30">
+                      <Icon name="arrowDown" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 5: FEATURED COLLECTION ---
+    function AdminFeaturedManager({ portfolio, setPortfolio, showToast }) {
+      const toggleFeatured = (id) => {
+        setPortfolio(prev => prev.map(item => item.id === id ? { ...item, is_featured: !item.is_featured } : item));
+        showToast('Featured status toggled!');
+      };
+
+      return (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Featured Collection</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Select items to showcase on the homepage hero grid.</p>
+          </div>
+
+          <div className="bg-cream-white rounded-lg border border-sage-green/30 shadow-sm divide-y divide-sage-green/20">
+            {portfolio.map(item => (
+              <div key={item.id} className="p-4 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-3">
+                  <img src={item.processed_image || item.main_image} className="w-10 h-10 object-cover rounded bg-checkerboard" />
+                  <div>
+                    <span className="font-serif text-base text-deep-teal block">{item.title}</span>
+                    <span className="text-[10px] text-duck-teal font-medium">RM {item.price}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => toggleFeatured(item.id)}
+                  className={`px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider ${item.is_featured ? 'bg-duck-teal text-cream-white' : 'border border-dark-grey/30 text-dark-grey hover:bg-soft-cream'}`}
+                >
+                  {item.is_featured ? '★ Featured' : '☆ Feature Item'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 6: AI BACKGROUND REMOVAL ---
+    function AdminAIBackgroundRemoval({ portfolio, setPortfolio, showToast }) {
+      const [processingId, setProcessingId] = useState(null);
+
+      const triggerAIBackgroundRemoval = (item) => {
+        setProcessingId(item.id);
+        showToast('AI Background Removal in progress...');
+
+        // Simulate AI Background Removal pipeline generating transparent PNG artwork
+        setTimeout(() => {
+          setPortfolio(prev => prev.map(p => p.id === item.id ? {
+            ...p,
+            processed_image: item.main_image // Marks as processed transparent asset
+          } : p));
+          setProcessingId(null);
+          showToast('Background removal completed successfully!');
+        }, 1500);
+      };
+
+      return (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">AI Background Removal</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Automated AI engine that strips background elements into transparent PNGs.</p>
+          </div>
+
+          <div className="bg-cream-white rounded-lg border border-sage-green/30 shadow-sm divide-y divide-sage-green/20">
+            {portfolio.map(item => (
+              <div key={item.id} className="p-4 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-checkerboard rounded overflow-hidden shadow-inner border border-sage-green/30">
+                    <img src={item.processed_image || item.main_image} className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <span className="font-serif text-lg text-deep-teal block">{item.title}</span>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono">
+                      {item.processed_image ? '● Transparent PNG Ready' : '○ Original Image'}
+                    </span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => triggerAIBackgroundRemoval(item)}
+                  disabled={processingId === item.id}
+                  className="px-4 py-2.5 bg-duck-teal text-cream-white rounded hover:bg-deep-teal transition-colors text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 disabled:opacity-50"
+                >
+                  <Icon name="sparkles" className="w-4 h-4 text-sage-green" />
+                  <span>{processingId === item.id ? 'Processing...' : 'Run AI Processing'}</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADMIN SUB-TAB 7: WEBSITE APPEARANCE SETTINGS ---
+    function AdminAppearanceSettings({ settings, setSettings, showToast }) {
+      const [formData, setFormData] = useState({ ...settings });
+
+      const handleSave = (e) => {
+        e.preventDefault();
+        setSettings({ ...formData });
+        showToast('Website appearance settings saved!');
+      };
+
+      return (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="font-serif text-3xl text-deep-teal">Website Appearance & Configuration</h1>
+            <p className="text-xs text-dark-grey/70 mt-1">Customize brand information, cloud storage, and hero banner settings.</p>
+          </div>
+
+          <form onSubmit={handleSave} className="bg-cream-white p-6 rounded-lg border border-sage-green/30 shadow-sm space-y-6 text-xs">
+            <div className="p-4 bg-soft-cream rounded-md border-l-4 border-duck-teal space-y-2">
+              <span className="font-semibold uppercase tracking-wider text-duck-teal block">Cloud Database Configuration (Supabase)</span>
+              <p className="text-[11px] text-dark-grey/80">Configure Supabase project details to enable real-time cloud multi-device sync.</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block font-semibold mb-1">Supabase Project URL</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://xyz.supabase.co" 
+                    value={formData.supabase_url} 
+                    onChange={e => setFormData({...formData, supabase_url: e.target.value})} 
+                    className="w-full bg-cream-white border border-sage-green/40 p-2 rounded text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Supabase Anon Public Key</label>
+                  <input 
+                    type="password" 
+                    placeholder="eyJhbGciOi..." 
+                    value={formData.supabase_anon_key} 
+                    onChange={e => setFormData({...formData, supabase_anon_key: e.target.value})} 
+                    className="w-full bg-cream-white border border-sage-green/40 p-2 rounded text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Brand Info</h3>
+              
+              <div>
+                <label className="block font-semibold uppercase mb-1">Brand Name</label>
+                <input 
+                  type="text" required 
+                  value={formData.brand_name} 
+                  onChange={e => setFormData({...formData, brand_name: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold uppercase mb-1">Brand Tagline</label>
+                <input 
+                  type="text" 
+                  value={formData.brand_tagline} 
+                  onChange={e => setFormData({...formData, brand_tagline: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">Hero Section</h3>
+
+              <div>
+                <label className="block font-semibold uppercase mb-1">Hero Title</label>
+                <input 
+                  type="text" 
+                  value={formData.hero_title} 
+                  onChange={e => setFormData({...formData, hero_title: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold uppercase mb-1">Hero Subtitle</label>
+                <textarea 
+                  rows="2"
+                  value={formData.hero_subtitle} 
+                  onChange={e => setFormData({...formData, hero_subtitle: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold uppercase mb-1">Hero Image URL</label>
+                <input 
+                  type="url" 
+                  value={formData.hero_image} 
+                  onChange={e => setFormData({...formData, hero_image: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-deep-teal border-b border-sage-green/20 pb-2">WhatsApp Contact</h3>
+
+              <div>
+                <label className="block font-semibold uppercase mb-1">WhatsApp Phone Number (International format)</label>
+                <input 
+                  type="text" 
+                  value={formData.whatsapp_number} 
+                  onChange={e => setFormData({...formData, whatsapp_number: e.target.value})} 
+                  className="w-full bg-soft-cream border border-sage-green/40 p-2.5 rounded"
+                />
+              </div>
+            </div>
+
             <div className="pt-4 flex justify-end">
               <button type="submit" className="px-8 py-3 bg-duck-teal text-cream-white text-xs uppercase tracking-widest font-semibold rounded shadow-md">
                 Save All Changes & Sync
@@ -1166,7 +1775,7 @@
 
             <form onSubmit={handleUpdateCredentials} className="space-y-4">
               <div>
-                <label className="block font-semibold uppercase text-dark-grey mb-1">Current Password (Required to verify identity)</label>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">Current Password (Required)</label>
                 <input 
                   type="password" 
                   required
@@ -1189,7 +1798,7 @@
               </div>
 
               <div>
-                <label className="block font-semibold uppercase text-dark-grey mb-1">New Password (Leave blank to keep current password)</label>
+                <label className="block font-semibold uppercase text-dark-grey mb-1">New Password (Optional)</label>
                 <input 
                   type="password" 
                   placeholder="Enter new password"
@@ -1294,7 +1903,7 @@ CREATE POLICY "Admin Full Portfolio" ON public.portfolio_items FOR ALL USING (au
       );
     }
 
-    // Render App safely with Error Boundary logic
+    // Render App
     try {
       ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     } catch(err) {
